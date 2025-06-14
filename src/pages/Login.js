@@ -26,7 +26,7 @@ function Login() {
 
   return (
     <div style={{ maxWidth: "400px", margin: "100px auto" }}>
-      <h2>Login</h2>
+      <h2>LOGIN</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         <input
