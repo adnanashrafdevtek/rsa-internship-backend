@@ -4,10 +4,10 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Student from "./pages/Student";
 import ClassApp from "./pages/ClassApp";
-import Time from "./pages/Time";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import ResetPassword from "./pages/ResetPassword";
+import Schedule from "./pages/Schedule";
 
 
 function App() {
@@ -41,10 +41,10 @@ function App() {
             }
           />
           <Route
-            path="/time"
+            path="/schedule"
             element={
               <ProtectedRoute>
-                <Time />
+                <Schedule />
               </ProtectedRoute>
             }
           />
