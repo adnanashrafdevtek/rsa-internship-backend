@@ -3,13 +3,27 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
+
+  if (!user) return null; // hide sidebar if not logged in
+
+  // Common links for all users
+  const links = [
+    { name: "Home", path: "/home" },
+    { name: "Classes", path: "/class" },
+    { name: "Schedule", path: "/schedule" },
+  ];
+
+  // Admin-only links
+  if (user.role === "admin") {
+    links.push({ name: "Users", path: "/student" });
+  }
 
   return (
     <div
@@ -20,7 +34,7 @@ export default function Sidebar() {
         padding: "20px",
         display: "flex",
         flexDirection: "column",
-        height: "100vh" // ensures sidebar fills full height
+        height: "100vh"
       }}
     >
       <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>
@@ -29,10 +43,11 @@ export default function Sidebar() {
 
       {/* Navigation Links */}
       <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <a href="/home" style={linkStyle}>Home</a>
-        <a href="/class" style={linkStyle}>Classes</a>
-        <a href="/time" style={linkStyle}>Time</a>
-        <a href="/student" style={linkStyle}>Student</a>
+        {links.map((link) => (
+          <a key={link.name} href={link.path} style={linkStyle}>
+            {link.name}
+          </a>
+        ))}
       </nav>
 
       {/* Spacer to push logout to bottom */}
