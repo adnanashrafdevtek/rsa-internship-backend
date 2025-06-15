@@ -59,8 +59,8 @@ export default function Sidebar() {
                   minWidth: "140px"
                 }}
               >
-                <Link to="/admin/schedule/teachers" style={submenuLinkStyle}>Teachers</Link>
-                <Link to="/admin/schedule/students" style={submenuLinkStyle}>Students</Link>
+                <Link to="/teacher/schedules" style={submenuLinkStyle}>Teachers</Link>
+                <Link to="/student/schedules" style={submenuLinkStyle}>Students</Link>
               </div>
             )}
           </div>
