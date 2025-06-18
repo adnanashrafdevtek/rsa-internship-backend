@@ -1,58 +1,99 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 
+// Dummy class list (can be stored in localStorage if needed)
+const dummyClasses = [
+  {
+    name: "Math A",
+    section: "1A",
+    subject: "Math",
+    room: "201",
+    timings: "8:00 – 8:45 AM",
+    teacher: "teacher",
+  },
+  {
+    name: "Science B",
+    section: "2B",
+    subject: "Science",
+    room: "102",
+    timings: "9:00 – 9:45 AM",
+    teacher: "teacher",
+  },
+  {
+    name: "History C",
+    section: "3C",
+    subject: "History",
+    room: "301",
+    timings: "10:00 – 10:45 AM",
+    teacher: "teacher2",
+  },
+];
+
 export default function ClassApp() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const capitalize = (str) =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
-  // Dummy class data
-  const classes = [
-    { id: 1, name: "Math 101", teacher: "Mr. Smith", time: "9:00 AM - 10:00 AM" },
-    { id: 2, name: "English Literature", teacher: "Ms. Johnson", time: "10:15 AM - 11:15 AM" },
-    { id: 3, name: "Physics", teacher: "Dr. Brown", time: "11:30 AM - 12:30 PM" },
-  ];
+  const isAdmin = user?.role === "admin";
+  const isTeacher = user?.role === "teacher";
+
+  const filteredClasses = isAdmin
+    ? dummyClasses
+    : isTeacher
+    ? dummyClasses.filter((cls) => cls.teacher === user.username)
+    : [];
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
-      <Sidebar onLogout={handleLogout} />
+    <div style={{ display: "flex" }}>
+      <Sidebar />
+      <div style={{ flex: 1, padding: "40px" }}>
+        <h1>{isAdmin ? "All Classes" : isTeacher ? "Your Classes" : "Classes"}</h1>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, backgroundColor: "white", padding: "40px" }}>
-        <h1 style={{ fontSize: "36px", fontWeight: "bold", marginBottom: "20px" }}>
-          Welcome, {user?.username}, to the class app
-        </h1>
-        <p style={{ fontSize: "18px", color: "#555", marginBottom: "30px" }}>
-          You can find your class schedule below:
-        </p>
-
-        {/* Display Classes */}
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {classes.map((cls) => (
-            <li
-              key={cls.id}
-              style={{
-                backgroundColor: "#ecf0f1",
-                padding: "15px",
-                marginBottom: "10px",
-                borderRadius: "8px",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-              }}
-            >
-              <strong>{cls.name}</strong> <br />
-              Teacher: {cls.teacher} <br />
-              Time: {cls.time}
-            </li>
-          ))}
-        </ul>
+        {filteredClasses.length === 0 ? (
+          <p style={{ marginTop: "20px" }}>
+            {isTeacher
+              ? "You are not assigned to any classes."
+              : "This page is only for teachers or admins."}
+          </p>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#eee" }}>
+                <th style={thStyle}>Class Name</th>
+                <th style={thStyle}>Section</th>
+                <th style={thStyle}>Subject</th>
+                <th style={thStyle}>Room</th>
+                <th style={thStyle}>Timings</th>
+                {isAdmin && <th style={thStyle}>Teacher</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClasses.map((cls, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #ccc" }}>
+                  <td style={tdStyle}>{cls.name}</td>
+                  <td style={tdStyle}>{cls.section}</td>
+                  <td style={tdStyle}>{cls.subject}</td>
+                  <td style={tdStyle}>{cls.room}</td>
+                  <td style={tdStyle}>{cls.timings}</td>
+                  {isAdmin && <td style={tdStyle}>{capitalize(cls.teacher)}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
+
+const thStyle = {
+  textAlign: "left",
+  padding: "10px",
+  fontWeight: "bold",
+};
+
+const tdStyle = {
+  padding: "10px",
+};
