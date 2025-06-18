@@ -2,7 +2,14 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 
-// Dummy class list (can be stored in localStorage if needed)
+const allStudents = [
+  "Fatima Ahmed", "Zayd Ali", "Maryam Yusuf", "Bilal Rahman",
+  "Layla Hussein", "Imran Saeed", "Noor Zaman", "Sara Iqbal",
+  "Khalid Rafi", "Mina Javed", "Rami Dabbas", "Yusuf Qureshi",
+  "Amina Malik", "Tariq Nassar", "Huda Fadl", "Omar Khalil",
+  "Sana Mirza", "Nabil Hossain", "Bushra Kamal"
+];
+
 const dummyClasses = [
   {
     name: "Math A",
@@ -11,6 +18,7 @@ const dummyClasses = [
     room: "201",
     timings: "8:00 – 8:45 AM",
     teacher: "teacher",
+    students: ["Fatima Ahmed", "Zayd Ali"],
   },
   {
     name: "Science B",
@@ -19,14 +27,16 @@ const dummyClasses = [
     room: "102",
     timings: "9:00 – 9:45 AM",
     teacher: "teacher",
+    students: ["Maryam Yusuf", "Bilal Rahman"],
   },
   {
-    name: "History C",
+    name: "Quran",
     section: "3C",
-    subject: "History",
-    room: "301",
+    subject: "Quran",
+    room: "104",
     timings: "10:00 – 10:45 AM",
-    teacher: "teacher2",
+    teacher: "ustadh",
+    students: ["All students"],
   },
 ];
 
@@ -38,30 +48,48 @@ export default function ClassApp() {
 
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
+  const isStudent = user?.role === "student";
 
-  const filteredClasses = isAdmin
-    ? dummyClasses
-    : isTeacher
-    ? dummyClasses.filter((cls) => cls.teacher === user.username)
-    : [];
+  // Determine which classes are visible
+  const visibleClasses = dummyClasses.filter((cls) => {
+    if (isAdmin) return true;
+    if (isTeacher) return cls.teacher === user.username;
+    if (isStudent) {
+      const studentList = cls.students.includes("All students")
+        ? allStudents
+        : cls.students;
+      return studentList.includes(user.username);
+    }
+    return false;
+  });
 
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
       <div style={{ flex: 1, padding: "40px" }}>
-        <h1>{isAdmin ? "All Classes" : isTeacher ? "Your Classes" : "Classes"}</h1>
+        <h1 style={{ marginBottom: "20px" }}>
+          {isAdmin
+            ? "All Classes"
+            : isTeacher
+            ? "Your Classes"
+            : isStudent
+            ? "Your Enrolled Classes"
+            : "Classes"}
+        </h1>
 
-        {filteredClasses.length === 0 ? (
-          <p style={{ marginTop: "20px" }}>
-            {isTeacher
+        {visibleClasses.length === 0 ? (
+          <p>
+            {isStudent
+              ? "You are not enrolled in any classes."
+              : isTeacher
               ? "You are not assigned to any classes."
-              : "This page is only for teachers or admins."}
+              : "No classes to display."}
           </p>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
             <thead>
               <tr style={{ backgroundColor: "#eee" }}>
-                <th style={thStyle}>Class Name</th>
+                <th style={thStyle}>Class</th>
                 <th style={thStyle}>Section</th>
                 <th style={thStyle}>Subject</th>
                 <th style={thStyle}>Room</th>
@@ -70,7 +98,7 @@ export default function ClassApp() {
               </tr>
             </thead>
             <tbody>
-              {filteredClasses.map((cls, i) => (
+              {visibleClasses.map((cls, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid #ccc" }}>
                   <td style={tdStyle}>{cls.name}</td>
                   <td style={tdStyle}>{cls.section}</td>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 
@@ -30,31 +30,23 @@ const defaultClassData = [
 
 export default function ClassRosters() {
   const { user } = useAuth();
-  const [classes, setClasses] = useState([]);
+  const [classes, setClasses] = useState(defaultClassData);
   const [newStudents, setNewStudents] = useState({});
-
-  // Load from localStorage or use default
-  useEffect(() => {
-    const stored = localStorage.getItem("rsa_class_rosters");
-    if (stored) {
-      setClasses(JSON.parse(stored));
-    } else {
-      setClasses(defaultClassData);
-    }
-  }, []);
-
-  // Save whenever classes change
-  useEffect(() => {
-    localStorage.setItem("rsa_class_rosters", JSON.stringify(classes));
-  }, [classes]);
 
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
-  const visibleClasses =
-    user?.role === "admin"
-      ? classes
-      : classes.filter((cls) => cls.teacher === user?.username);
+  const visibleClasses = classes.filter((cls) => {
+    if (user?.role === "admin") return true;
+    if (user?.role === "teacher") return cls.teacher === user.username;
+    if (user?.role === "student") {
+      const studentList = cls.students.includes("All students")
+        ? allStudents
+        : cls.students;
+      return studentList.includes(user.username);
+    }
+    return false;
+  });
 
   const handleAddStudent = (index) => {
     const name = newStudents[index]?.trim();
@@ -62,7 +54,6 @@ export default function ClassRosters() {
 
     const updated = [...classes];
     if (!updated[index].students.includes(name)) {
-      // Remove "All students" if it exists
       updated[index].students = updated[index].students.filter(s => s !== "All students");
       updated[index].students.push(name);
       setClasses(updated);
@@ -81,7 +72,11 @@ export default function ClassRosters() {
       <Sidebar />
       <div style={{ padding: "30px", flex: 1 }}>
         <h1 style={{ marginBottom: "20px" }}>
-          {user?.role === "admin" ? "All Class Rosters" : "Your Class Rosters"}
+          {user?.role === "admin"
+            ? "All Class Rosters"
+            : user?.role === "teacher"
+            ? "Your Class Rosters"
+            : "Class Rosters You're Enrolled In"}
         </h1>
 
         {visibleClasses.length === 0 ? (
