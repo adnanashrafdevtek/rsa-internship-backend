@@ -2,7 +2,6 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 
-
 const classData = [
   {
     subject: "Math",
@@ -23,6 +22,9 @@ const classData = [
 
 export default function ClassRosters() {
   const { user } = useAuth();
+
+  const capitalizeFirst = (str) =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
   const visibleClasses =
     user?.role === "admin"
@@ -52,7 +54,9 @@ export default function ClassRosters() {
               }}
             >
               <h2>{cls.subject}</h2>
-              <p style={{ color: "#888" }}>Teacher: {cls.teacher}</p>
+              <p style={{ color: "#888" }}>
+                Teacher: {capitalizeFirst(cls.teacher)}
+              </p>
               <ul>
                 {cls.students.map((student, i) => (
                   <li key={i}>{student}</li>

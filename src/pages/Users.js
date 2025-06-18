@@ -1,61 +1,71 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import Sidebar from "./Sidebar"; // adjust if your Sidebar is in components
+import Sidebar from "./Sidebar";
 
-// Dummy user list (can be replaced with real data)
-const users = [
-  { name: "Alice Thompson", role: "student" },
-  { name: "Brian Wilson", role: "student" },
-  { name: "Catherine Lee", role: "student" },
-  { name: "Daniel Kim", role: "student" },
-  { name: "Emily Davis", role: "student" },
-  { name: "Frank Wright", role: "student" },
-  { name: "Grace Parker", role: "student" },
-  { name: "Henry Martinez", role: "student" },
-  { name: "Isabella Clark", role: "student" },
-  { name: "Jack Nguyen", role: "student" },
-  { name: "teacher", role: "teacher" },
-  { name: "admin", role: "admin" },
+const classData = [
+  {
+    subject: "Math",
+    teacher: "teacher",
+    students: ["Fatima Ahmed", "Zayd Ali"],
+  },
+  {
+    subject: "Science",
+    teacher: "teacher",
+    students: ["Maryam Yusuf", "Bilal Rahman"],
+  },
+  {
+    subject: "Quran",
+    teacher: "ustadh",
+    students: ["All students"],
+  },
 ];
 
-export default function Users() {
+export default function ClassRosters() {
   const { user } = useAuth();
 
-  if (user?.role !== "admin") {
-    return <p style={{ padding: "40px" }}>Unauthorized. Admins only.</p>;
-  }
+  const capitalizeFirst = (str) =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
+  const visibleClasses =
+    user?.role === "admin"
+      ? classData
+      : classData.filter((cls) => cls.teacher === user?.username);
 
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
-      <div style={{ flex: 1, padding: "40px" }}>
-        <h1>All Users</h1>
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#eee" }}>
-              <th style={thStyle}>Name</th>
-              <th style={thStyle}>Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u, index) => (
-              <tr key={index} style={{ borderBottom: "1px solid #ccc" }}>
-                <td style={tdStyle}>{u.name}</td>
-                <td style={tdStyle}>{u.role}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ padding: "30px", flex: 1 }}>
+        <h1 style={{ marginBottom: "20px" }}>
+          {user?.role === "admin" ? "All Class Rosters" : "Your Class Rosters"}
+        </h1>
+
+        {visibleClasses.length === 0 ? (
+          <p>You don’t have any assigned classes.</p>
+        ) : (
+          visibleClasses.map((cls, index) => (
+            <div
+              key={index}
+              style={{
+                background: "#f9f9f9",
+                padding: "16px",
+                marginBottom: "20px",
+                borderRadius: "8px",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+              }}
+            >
+              <h2>{cls.subject}</h2>
+              <p style={{ color: "#888" }}>
+                Teacher: {capitalizeFirst(cls.teacher)}
+              </p>
+              <ul>
+                {cls.students.map((student, i) => (
+                  <li key={i}>{student}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
-
-const thStyle = {
-  textAlign: "left",
-  padding: "10px",
-};
-
-const tdStyle = {
-  padding: "10px",
-};
