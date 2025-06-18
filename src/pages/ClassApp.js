@@ -2,14 +2,6 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 
-const allStudents = [
-  "Fatima Ahmed", "Zayd Ali", "Maryam Yusuf", "Bilal Rahman",
-  "Layla Hussein", "Imran Saeed", "Noor Zaman", "Sara Iqbal",
-  "Khalid Rafi", "Mina Javed", "Rami Dabbas", "Yusuf Qureshi",
-  "Amina Malik", "Tariq Nassar", "Huda Fadl", "Omar Khalil",
-  "Sana Mirza", "Nabil Hossain", "Bushra Kamal"
-];
-
 const dummyClasses = [
   {
     name: "Math A",
@@ -18,7 +10,7 @@ const dummyClasses = [
     room: "201",
     timings: "8:00 – 8:45 AM",
     teacher: "teacher",
-    students: ["Fatima Ahmed", "Zayd Ali"],
+    students: ["student", "Fatima Ahmed"],
   },
   {
     name: "Science B",
@@ -27,17 +19,22 @@ const dummyClasses = [
     room: "102",
     timings: "9:00 – 9:45 AM",
     teacher: "teacher",
-    students: ["Maryam Yusuf", "Bilal Rahman"],
+    students: ["Maryam Yusuf", "student"],
   },
   {
-    name: "Quran",
+    name: "History C",
     section: "3C",
-    subject: "Quran",
-    room: "104",
+    subject: "History",
+    room: "301",
     timings: "10:00 – 10:45 AM",
     teacher: "ustadh",
     students: ["All students"],
   },
+];
+
+const allStudents = [
+  "student", "Fatima Ahmed", "Zayd Ali", "Maryam Yusuf", "Bilal Rahman",
+  "Layla Hussein", "Imran Saeed", "Noor Zaman", "Sara Iqbal", "Khalid Rafi"
 ];
 
 export default function ClassApp() {
@@ -50,15 +47,12 @@ export default function ClassApp() {
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
 
-  // Determine which classes are visible
   const visibleClasses = dummyClasses.filter((cls) => {
     if (isAdmin) return true;
     if (isTeacher) return cls.teacher === user.username;
     if (isStudent) {
-      const studentList = cls.students.includes("All students")
-        ? allStudents
-        : cls.students;
-      return studentList.includes(user.username);
+      const list = cls.students.includes("All students") ? allStudents : cls.students;
+      return list.includes(user.username);
     }
     return false;
   });
@@ -86,7 +80,13 @@ export default function ClassApp() {
               : "No classes to display."}
           </p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: "20px",
+            }}
+          >
             <thead>
               <tr style={{ backgroundColor: "#eee" }}>
                 <th style={thStyle}>Class</th>
