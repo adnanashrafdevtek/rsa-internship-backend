@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-import Student from "./pages/Student";
+import Student from "./pages/Users";
 import ClassApp from "./pages/ClassApp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
@@ -10,7 +10,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Schedule from "./pages/Schedule";
 import TeacherList from "./pages/TeacherList";
 import StudentList from "./pages/StudentList";
-
+import ClassRosters from "./pages/ClassRosters"; // ✅ NEW
 
 function App() {
   return (
@@ -54,20 +54,26 @@ function App() {
             path="/teacher/schedules"
             element={
               <ProtectedRoute>
-                <TeacherList/>
+                <TeacherList />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reset-password"
-            element={
-                <ResetPassword />
             }
           />
           <Route
             path="/student/schedules"
             element={
-                <StudentList />
+              <StudentList />
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={<ResetPassword />}
+          />
+          <Route
+            path="/rosters"
+            element={
+              <ProtectedRoute>
+                <ClassRosters />
+              </ProtectedRoute>
             }
           />
         </Routes>

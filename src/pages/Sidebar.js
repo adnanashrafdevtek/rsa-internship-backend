@@ -12,9 +12,12 @@ export default function Sidebar() {
     navigate("/");
   };
 
+  const capitalizeFirst = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
+  const isTeacher = user.role === "teacher";
 
   return (
     <div
@@ -32,6 +35,10 @@ export default function Sidebar() {
       <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>
         Navigation
       </h2>
+
+      <p style={{ marginBottom: "20px", fontSize: "16px", color: "#ecf0f1" }}>
+        Logged in as: <strong>{capitalizeFirst(user.username)}</strong>
+      </p>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         <Link to="/home" style={linkStyle}>Home</Link>
@@ -66,6 +73,11 @@ export default function Sidebar() {
           </div>
         ) : (
           <Link to="/schedule" style={linkStyle}>Schedule</Link>
+        )}
+
+        {/* Admin & Teacher shared access */}
+        {(isAdmin || isTeacher) && (
+          <Link to="/rosters" style={linkStyle}>Class Rosters</Link>
         )}
 
         {/* Admin-only link */}
