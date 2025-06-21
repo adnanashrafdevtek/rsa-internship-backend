@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
+import { Calendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import Sidebar from "./Sidebar";
@@ -28,6 +28,7 @@ export default function StudentList() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [studentSchedules, setStudentSchedules] = useState({});
+  const [view, setView] = useState(Views.WEEK);
 
   const filteredStudents = dummyStudents.filter((student) =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -123,6 +124,10 @@ export default function StudentList() {
               selectable
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
+              views={['month', 'week', 'day']}
+              view={view}
+              onView={(newView) => setView(newView)}
+              defaultDate={new Date()}
             />
           </div>
         )}

@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Calendar, momentLocalizer, Views } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+const localizer = momentLocalizer(moment);
 
 // Dummy teacher list
 const dummyTeachers = [
@@ -15,10 +20,39 @@ export default function TeacherList() {
   const navigate = useNavigate();
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [teacherSchedules, setTeacherSchedules] = useState({});
+  const [view, setView] = useState(Views.WEEK);
 
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const handleSelectSlot = ({ start, end }) => {
+    const title = window.prompt("Enter event title:");
+    if (title) {
+      const newEvent = { start, end, title };
+      setTeacherSchedules((prev) => {
+        const currentEvents = prev[selectedTeacher.id] || [];
+        return {
+          ...prev,
+          [selectedTeacher.id]: [...currentEvents, newEvent]
+        };
+      });
+    }
+  };
+
+  const handleSelectEvent = (event) => {
+    if (window.confirm(`Delete the event: "${event.title}"?`)) {
+      setTeacherSchedules((prev) => {
+        const currentEvents = prev[selectedTeacher.id] || [];
+        const updatedEvents = currentEvents.filter((e) => e !== event);
+        return {
+          ...prev,
+          [selectedTeacher.id]: updatedEvents
+        };
+      });
+    }
   };
 
   const filteredTeachers = dummyTeachers.filter((teacher) =>
@@ -73,7 +107,20 @@ export default function TeacherList() {
               {selectedTeacher.name}'s Calendar
             </h2>
 
-            <p>This is where the calendar will go. (We will integrate react-big-calendar next.)</p>
+            <Calendar
+              localizer={localizer}
+              events={teacherSchedules[selectedTeacher.id] || []}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: 500 }}
+              selectable
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={handleSelectEvent}
+              views={['month', 'week', 'day']}
+              view={view}
+              onView={(newView) => setView(newView)}
+              defaultDate={new Date()}
+            />
           </div>
         )}
       </div>
