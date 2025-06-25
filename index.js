@@ -4,19 +4,25 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Dummy book data
 const books = [
   { id: 1, title: "The Hobbit", author: "J.R.R. Tolkien" },
   { id: 2, title: "1984", author: "George Orwell" },
 ];
 
+// Dummy calendar data
+const calendarEvents = [
+  { id: 1, title: "Field Trip", date: "2025-07-01", ownerId: "student123" },
+  { id: 2, title: "Math Exam", date: "2025-07-05", ownerId: "student123" },
+  { id: 3, title: "Basketball Game", date: "2025-07-10", ownerId: "student456" },
+];
+
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  
   res.status(403).json("your login failed");
 });
 
-
-// Routes
+// Book Routes
 app.get('/books', (req, res) => {
   res.json(books);
 });
@@ -51,6 +57,37 @@ app.delete('/books/:id', (req, res) => {
 
   const deleted = books.splice(index, 1);
   res.json(deleted[0]);
+});
+
+// Calendar Route: GET /myCalendar
+app.get('/myCalendar', (req, res) => {
+  const userId = req.query.userId;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId query parameter" });
+  }
+
+  const myEvents = calendarEvents.filter(event => event.ownerId === userId);
+  res.json(myEvents);
+});
+
+// Calendar Route: POST /calendar
+app.post('/calendar', (req, res) => {
+  const { title, date, ownerId } = req.body;
+
+  if (!title || !date || !ownerId) {
+    return res.status(400).json({ error: "Missing title, date, or ownerId" });
+  }
+
+  const newEvent = {
+    id: calendarEvents.length + 1,
+    title,
+    date,
+    ownerId
+  };
+
+  calendarEvents.push(newEvent);
+  res.status(201).json(newEvent);
 });
 
 app.listen(PORT, () => {
