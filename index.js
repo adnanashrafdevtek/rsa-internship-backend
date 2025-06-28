@@ -4,19 +4,25 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Dummy books array
 const books = [
   { id: 1, title: "The Hobbit", author: "J.R.R. Tolkien" },
   { id: 2, title: "1984", author: "George Orwell" },
 ];
 
+// Dummy calendars array
+const calendars = [
+  { id: 1, name: "Work Calendar", owner: "Alice" },
+  { id: 2, name: "School Calendar", owner: "Bob" }
+];
+
+// Dummy login route (always fails for now)
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  
   res.status(403).json("your login failed");
 });
 
-
-// Routes
+// Books Routes
 app.get('/books', (req, res) => {
   res.json(books);
 });
@@ -53,6 +59,12 @@ app.delete('/books/:id', (req, res) => {
   res.json(deleted[0]);
 });
 
+// Calendars Route
+app.get('/allCalendars', (req, res) => {
+  res.json(calendars);
+});
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
