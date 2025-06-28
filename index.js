@@ -61,7 +61,7 @@ app.delete('/books/:id', (req, res) => {
 
 // Calendars Route
 app.get('/allCalendars', (req, res) => {
-  res.json(calendars);
+  res.json(calendarEvents);
 });
 
 // Start server
