@@ -1,0 +1,8 @@
+POST http://localhost:3000/calendar
+Content-Type: application/json
+
+{
+  "title": "Meeting",
+  "date": "2025-07-20",
+  "ownerId": "student123"
+}
