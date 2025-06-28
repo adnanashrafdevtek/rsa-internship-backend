@@ -10,6 +10,7 @@ const books = [
   { id: 2, title: "1984", author: "George Orwell" },
 ];
 
+
 // Dummy calendar data
 const calendarEvents = [
   { id: 1, title: "Field Trip", date: "2025-07-01", ownerId: "student123" },
@@ -21,7 +22,6 @@ app.post('/login', (req, res) => {
   const { username, password } = req.body;
   res.status(403).json("your login failed");
 });
-
 // Book Routes
 app.get('/books', (req, res) => {
   res.json(books);
@@ -59,6 +59,13 @@ app.delete('/books/:id', (req, res) => {
   res.json(deleted[0]);
 });
 
+// Calendars Route
+app.get('/allCalendars', (req, res) => {
+  res.json(calendars);
+});
+
+// Start server
+
 // Calendar Route: GET /myCalendar
 app.get('/myCalendar', (req, res) => {
   const userId = req.query.userId;
@@ -89,6 +96,7 @@ app.post('/calendar', (req, res) => {
   calendarEvents.push(newEvent);
   res.status(201).json(newEvent);
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
