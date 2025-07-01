@@ -1,6 +1,2 @@
-PUT http://localhost:3000/calendar/2
-Content-Type: application/json
-
-{
-  "date": "6/7/2025"
-}
+GET http://localhost:3000/allCalendars
+Accept: application/json
