@@ -98,6 +98,29 @@ app.post('/calendar', (req, res) => {
 });
 
 
+// PUT /calendar/:id
+app.put('/calendar/:id', (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { title, date, ownerId } = req.body;
+
+  const event = calendarEvents.find(e => e.id === eventId);
+  if (!event) {
+    return res.status(404).json({ error: "Event not found" });
+  }
+
+  if (title) event.title = title;
+  if (date) event.date = date;
+  if (ownerId) event.ownerId = ownerId;
+
+  res.json(event);
+});
+
+// Server listener (keep this at the very end)
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
