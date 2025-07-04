@@ -17,7 +17,27 @@ const calendarEvents = [
   { id: 2, title: "Math Exam", date: "2025-07-05", ownerId: "student123" },
   { id: 3, title: "Basketball Game", date: "2025-07-10", ownerId: "student456" },
 ];
+// db.js
+require('dotenv').config(); // 👈 Load environment variables
 
+const mysql = require('mysql2');
+
+const connection = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
+});
+
+connection.connect((err) => {
+  if (err) {
+    console.error('❌ DB Connection Error:', err);
+  } else {
+    console.log('✅ Connected to MySQL!');
+  }
+});
+
+module.exports = connection;
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   res.status(403).json("your login failed");
