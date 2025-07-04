@@ -1,6 +1,8 @@
 const express = require('express');
+const db = require('./db');
 const app = express();
 const PORT = 3000;
+
 
 app.use(express.json());
 
@@ -59,10 +61,19 @@ app.delete('/books/:id', (req, res) => {
   res.json(deleted[0]);
 });
 
-// Calendars Route
 app.get('/allCalendars', (req, res) => {
-  res.json(calendarEvents);
+  const query = `
+    SELECT c.idcalendar, c.start_time, c.end_time, c.class_id, cl.class_name
+    FROM calendar c
+    JOIN class cl ON c.class_id = cl.id
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
+
+
 
 // Start server
 
@@ -98,6 +109,49 @@ app.post('/calendar', (req, res) => {
 });
 
 
+// PUT /calendar/:id
+app.put('/calendar/:id', (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { title, date, ownerId } = req.body;
+
+  const event = calendarEvents.find(e => e.id === eventId);
+  if (!event) {
+    return res.status(404).json({ error: "Event not found" });
+  }
+
+  if (title) event.title = title;
+  if (date) event.date = date;
+  if (ownerId) event.ownerId = ownerId;
+
+  res.json(event);
+});
+
+
+// DELETE /calendar/:id - delete one event by id
+app.delete('/calendar/:id', (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const index = calendarEvents.findIndex(e => e.id === eventId);
+  if (index === -1) return res.status(404).json({ error: "Event not found" });
+
+  const deletedEvent = calendarEvents.splice(index, 1);
+  res.json(deletedEvent[0]);
+});
+
+// DELETE /calendar - delete all calendar events
+app.delete('/calendar', (req, res) => {
+  calendarEvents.length = 0;  // clears the array in place
+  res.json({ message: "All calendar events deleted" });
+});
+
+app.get('/testdb', (req, res) => {
+  db.query('SELECT 1 + 1 AS solution', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);  // Should return [{ solution: 2 }]
+  });
+});
+
+
+// Server listener (keep this at the very end)
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
