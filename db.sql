@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `rsa_scheduler`.`class` (
   `grade` VARCHAR(45) NOT NULL,
   `classcol` VARCHAR(45) NULL,
   `teacher_id` INT NOT NULL,
-  PRIMARY KEY (`id`, `teacher_id`),
+  PRIMARY KEY (`id`),
   INDEX `fk_class_user_idx` (`teacher_id` ASC) ,
   CONSTRAINT `fk_class_user`
     FOREIGN KEY (`teacher_id`)
@@ -71,8 +71,7 @@ CREATE TABLE IF NOT EXISTS `rsa_scheduler`.`calendar` (
     REFERENCES `rsa_scheduler`.`class` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+ENGINE = InnoDB;  
 
 -- -----------------------------------------------------
 -- Table `rsa_scheduler`.`student_class`
@@ -110,3 +109,6 @@ INSERT INTO `rsa_scheduler`.`user` (`first_name`, `last_name`, `email`, `address
 
 INSERT INTO `rsa_scheduler`.`class` (`class_name`, `grade`, `teacher_id`) VALUES ('ENG101', '3', '2');
 
+INSERT INTO `rsa_scheduler`.`calendar` (`id`, `end_time`, `start_time`, `class_id`) VALUES ('1', '2025-07-08 09:00:00', '2025-07-08 08:00:00', '1');
+
+INSERT INTO `rsa_scheduler`.`calendar` (`id`, `end_time`, `start_time`, `class_id`) VALUES ('2', '2025-07-09 011:00:00', '2025-07-09 10;00:00', '1');

@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const PORT = 3000;
-
+const db = require('./db');
 app.use(express.json());
 
 // Dummy book data
@@ -17,27 +17,6 @@ const calendarEvents = [
   { id: 2, title: "Math Exam", date: "2025-07-05", ownerId: "student123" },
   { id: 3, title: "Basketball Game", date: "2025-07-10", ownerId: "student456" },
 ];
-// db.js
-require('dotenv').config(); // 👈 Load environment variables
-
-const mysql = require('mysql2');
-
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ DB Connection Error:', err);
-  } else {
-    console.log('✅ Connected to MySQL!');
-  }
-});
-
-module.exports = connection;
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   res.status(403).json("your login failed");
@@ -80,41 +59,59 @@ app.delete('/books/:id', (req, res) => {
 });
 
 // Calendars Route
+// app.get('/allCalendars', (req, res) => {
+//   res.json(calendarEvents);
+// });
+
 app.get('/allCalendars', (req, res) => {
-  res.json(calendarEvents);
+  const sql = `
+    SELECT c.id, c.start_time AS start, c.end_time AS end, cl.class_name AS title
+    FROM calendar c
+    JOIN class cl ON c.class_id = cl.id
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
 });
 
 // Start server
 
 // Calendar Route: GET /myCalendar
 app.get('/myCalendar', (req, res) => {
-  const userId = req.query.userId;
+  const { userId } = req.query;
 
   if (!userId) {
     return res.status(400).json({ error: "Missing userId query parameter" });
   }
 
-  const myEvents = calendarEvents.filter(event => event.ownerId === userId);
-  res.json(myEvents);
+  const sql = `
+    SELECT c.id, c.start_time AS start, c.end_time AS end, cl.class_name AS title
+    FROM calendar c
+    JOIN class cl ON c.class_id = cl.id
+    JOIN student_class sc ON sc.class_id = cl.id
+    WHERE sc.student_id = ?
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
 });
 
 // Calendar Route: POST /calendar
 app.post('/calendar', (req, res) => {
-  const { title, date, ownerId } = req.body;
+  const { start, end, class_id } = req.body;
 
-  if (!title || !date || !ownerId) {
-    return res.status(400).json({ error: "Missing title, date, or ownerId" });
+  if (!start || !end || !class_id) {
+    return res.status(400).json({ error: "Missing start, end, or class_id" });
   }
 
-  const newEvent = {
-    id: calendarEvents.length + 1,
-    title,
-    date,
-    ownerId
-  };
-
-  calendarEvents.push(newEvent);
-  res.status(201).json(newEvent);
+  const sql = `INSERT INTO calendar (start_time, end_time, class_id) VALUES (?, ?, ?)`;
+  db.query(sql, [start, end, class_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.status(201).json({ id: result.insertId });
+  });
 });
 
 
