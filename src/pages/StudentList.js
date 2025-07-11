@@ -16,12 +16,14 @@ export default function StudentList() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [studentSchedules, setStudentSchedules] = useState({});
+  const [selectedEvents, setSelectedEvents] = useState(new Set());
   const [view, setView] = useState(Views.WEEK);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [showCheckboxes, setShowCheckboxes] = useState(false);
 
-  // 🔁 Fetch students from backend
   useEffect(() => {
-    fetch("http://localhost:5000/api/students")
+    fetch("http://localhost:3000/api/students")
       .then((res) => res.json())
       .then((data) => {
         setStudents(data);
@@ -33,8 +35,39 @@ export default function StudentList() {
       });
   }, []);
 
+  const fetchEventsForStudent = async (studentId) => {
+    try {
+      const res = await fetch(`http://localhost:3000/myCalendar?userId=${studentId}`);
+      if (!res.ok) throw new Error("Failed to fetch calendar events");
+      const data = await res.json();
+
+      const formatted = data.map((event) => ({
+        id: event.idcalendar,
+        title: event.class_name,
+        start: new Date(event.start_time),
+        end: new Date(event.end_time),
+      }));
+
+      setStudentSchedules((prev) => ({
+        ...prev,
+        [studentId]: formatted,
+      }));
+      setSelectedEvents(new Set());
+      setShowCheckboxes(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load calendar events");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchEventsForStudent(selectedStudent.id);
+    }
+  }, [selectedStudent]);
+
   const filteredStudents = students.filter((student) =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
+    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleLogout = () => {
@@ -42,43 +75,127 @@ export default function StudentList() {
     navigate("/");
   };
 
-  const handleSelectSlot = ({ start, end }) => {
+  const handleSelectSlot = async ({ start, end }) => {
+    if (showCheckboxes) return;
+
     const title = window.prompt("Enter event title:");
-    if (title) {
-      const newEvent = { start, end, title };
+    if (!title) return;
+
+    const classId = selectedStudent.class_id || 1;
+
+    try {
+      const res = await fetch("http://localhost:3000/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_time: moment(start).format("YYYY-MM-DD HH:mm:ss"),
+          end_time: moment(end).format("YYYY-MM-DD HH:mm:ss"),
+          class_id: classId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add event");
+
+      const newEvent = await res.json();
+
       setStudentSchedules((prev) => {
         const currentEvents = prev[selectedStudent.id] || [];
         return {
           ...prev,
-          [selectedStudent.id]: [...currentEvents, newEvent]
+          [selectedStudent.id]: [
+            ...currentEvents,
+            {
+              id: newEvent.idcalendar,
+              title,
+              start: new Date(newEvent.start_time),
+              end: new Date(newEvent.end_time),
+            },
+          ],
         };
       });
+    } catch (err) {
+      alert(err.message);
     }
   };
 
-  const handleSelectEvent = (event) => {
-    if (window.confirm(`Delete the event: "${event.title}"?`)) {
+  const toggleSelectEvent = (eventId) => {
+    setSelectedEvents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedEvents.size === 0) {
+      alert("No events selected");
+      return;
+    }
+    if (!window.confirm(`Delete ${selectedEvents.size} selected event(s)?`)) return;
+
+    setDeleting(true);
+    try {
+      for (const eventId of selectedEvents) {
+        const res = await fetch(`http://localhost:3000/calendar/${eventId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete event");
+      }
+
       setStudentSchedules((prev) => {
-        const currentEvents = prev[selectedStudent.id] || [];
-        const updatedEvents = currentEvents.filter((e) => e !== event);
+        const filteredEvents = (prev[selectedStudent.id] || []).filter(
+          (event) => !selectedEvents.has(event.id)
+        );
         return {
           ...prev,
-          [selectedStudent.id]: updatedEvents
+          [selectedStudent.id]: filteredEvents,
         };
       });
+      setSelectedEvents(new Set());
+      setShowCheckboxes(false);
+    } catch (err) {
+      alert(err.message);
+    }
+    setDeleting(false);
+  };
+
+  const handleSelectAll = () => {
+    const allEventIds = (studentSchedules[selectedStudent.id] || []).map((e) => e.id);
+    if (selectedEvents.size === allEventIds.length) {
+      setSelectedEvents(new Set());
+    } else {
+      setSelectedEvents(new Set(allEventIds));
     }
   };
+
+  const EventWithCheckbox = ({ event }) => (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {showCheckboxes && (
+        <input
+          type="checkbox"
+          checked={selectedEvents.has(event.id)}
+          onChange={() => toggleSelectEvent(event.id)}
+          style={{ marginRight: 8 }}
+        />
+      )}
+      <span>{event.title}</span>
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
       <Sidebar onLogout={handleLogout} />
-
-      {/* Main Content */}
       <div style={{ flex: 1, backgroundColor: "white", padding: "40px" }}>
-        <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "20px" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "5px" }}>
           View Student Schedules
         </h1>
+        <p style={{ marginBottom: "20px", fontSize: "16px", color: "#555" }}>
+          To add an event, drag and select a time slot on the calendar. A prompt will ask you to enter the event title.
+        </p>
 
         {loading ? (
           <p>Loading students...</p>
@@ -99,10 +216,13 @@ export default function StudentList() {
               {filteredStudents.map((student) => (
                 <li key={student.id} style={{ marginBottom: "10px" }}>
                   <button
-                    style={buttonStyle}
+                    style={{
+                      ...buttonStyle,
+                      backgroundColor: "#2980b9",
+                    }}
                     onClick={() => setSelectedStudent(student)}
                   >
-                    {student.name}
+                    {student.first_name} {student.last_name}
                   </button>
                 </li>
               ))}
@@ -112,19 +232,56 @@ export default function StudentList() {
         ) : (
           <div>
             <button
-              style={{
-                ...buttonStyle,
-                marginBottom: "20px",
-                backgroundColor: "#95a5a6"
+              style={{ ...buttonStyle, marginBottom: "20px", backgroundColor: "#95a5a6" }}
+              onClick={() => {
+                setSelectedStudent(null);
+                setShowCheckboxes(false);
+                setSelectedEvents(new Set());
               }}
-              onClick={() => setSelectedStudent(null)}
             >
               ← Back to Student List
             </button>
 
             <h2 style={{ fontSize: "24px", marginBottom: "10px" }}>
-              {selectedStudent.name}'s Schedule
+              {selectedStudent.first_name} {selectedStudent.last_name}'s Schedule
             </h2>
+
+            <div style={{ marginBottom: 10 }}>
+              <button
+                style={{ ...buttonStyle, backgroundColor: "#c0392b" }}
+                onClick={() => {
+                  if (showCheckboxes) {
+                    setShowCheckboxes(false);
+                    setSelectedEvents(new Set());
+                  } else {
+                    setShowCheckboxes(true);
+                  }
+                }}
+              >
+                {showCheckboxes ? "Cancel Delete" : "Delete Events"}
+              </button>
+
+              {showCheckboxes && (
+                <button
+                  style={{ ...buttonStyle, marginLeft: 10, backgroundColor: "#2980b9" }}
+                  onClick={handleSelectAll}
+                >
+                  {selectedEvents.size === (studentSchedules[selectedStudent.id]?.length || 0)
+                    ? "Unselect All"
+                    : "Select All"}
+                </button>
+              )}
+
+              {showCheckboxes && selectedEvents.size > 0 && (
+                <button
+                  disabled={deleting}
+                  onClick={handleDeleteSelected}
+                  style={{ ...buttonStyle, backgroundColor: "#e74c3c", marginLeft: 10 }}
+                >
+                  {deleting ? "Deleting..." : `Delete Selected (${selectedEvents.size})`}
+                </button>
+              )}
+            </div>
 
             <Calendar
               localizer={localizer}
@@ -132,13 +289,20 @@ export default function StudentList() {
               startAccessor="start"
               endAccessor="end"
               style={{ height: 500 }}
-              selectable
+              selectable={!showCheckboxes}
               onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
+              components={{
+                event: EventWithCheckbox,
+              }}
               views={["month", "week", "day"]}
               view={view}
               onView={(newView) => setView(newView)}
               defaultDate={new Date()}
+              eventPropGetter={(event) =>
+                showCheckboxes && selectedEvents.has(event.id)
+                  ? { style: { backgroundColor: "#e74c3c" } }
+                  : {}
+              }
             />
           </div>
         )}
@@ -149,11 +313,11 @@ export default function StudentList() {
 
 const buttonStyle = {
   padding: "10px 15px",
-  backgroundColor: "#2980b9",
+  backgroundColor: "#c0392b", // red default
   color: "white",
   border: "none",
   borderRadius: "4px",
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const searchStyle = {
@@ -163,5 +327,5 @@ const searchStyle = {
   fontSize: "16px",
   marginBottom: "10px",
   borderRadius: "4px",
-  border: "1px solid #ccc"
+  border: "1px solid #ccc",
 };
