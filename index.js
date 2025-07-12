@@ -115,12 +115,24 @@ app.put('/calendar/:id', (req, res) => {
   res.json(event);
 });
 
-// Server listener (keep this at the very end)
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+
+// DELETE /calendar/:id - delete one event by id
+app.delete('/calendar/:id', (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const index = calendarEvents.findIndex(e => e.id === eventId);
+  if (index === -1) return res.status(404).json({ error: "Event not found" });
+
+  const deletedEvent = calendarEvents.splice(index, 1);
+  res.json(deletedEvent[0]);
 });
 
+// DELETE /calendar - delete all calendar events
+app.delete('/calendar', (req, res) => {
+  calendarEvents.length = 0;  // clears the array in place
+  res.json({ message: "All calendar events deleted" });
+});
 
+// Server listener (keep this at the very end)
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
