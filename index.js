@@ -75,80 +75,130 @@ app.get('/allCalendars', (req, res) => {
 
 
 
-// Start server
+// get/ myCalendar
 
-// Calendar Route: GET /myCalendar
 app.get('/myCalendar', (req, res) => {
-  const userId = req.query.userId;
+  const studentId = req.query.userId;
 
-  if (!userId) {
+  if (!studentId) {
     return res.status(400).json({ error: "Missing userId query parameter" });
   }
 
-  const myEvents = calendarEvents.filter(event => event.ownerId === userId);
-  res.json(myEvents);
+  const query = `
+    SELECT c.idcalendar, c.start_time, c.end_time, c.class_id, cl.class_name
+    FROM calendar c
+    JOIN class cl ON c.class_id = cl.id
+    JOIN student_class sc ON sc.class_id = cl.id
+    WHERE sc.user_id = ?
+  `;
+
+  db.query(query, [studentId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
+
 
 // Calendar Route: POST /calendar
 app.post('/calendar', (req, res) => {
-  const { title, date, ownerId } = req.body;
+  const { start_time, end_time, class_id } = req.body;
 
-  if (!title || !date || !ownerId) {
-    return res.status(400).json({ error: "Missing title, date, or ownerId" });
+  if (!start_time || !end_time || !class_id) {
+    return res.status(400).json({ error: "Missing start_time, end_time, or class_id" });
   }
 
-  const newEvent = {
-    id: calendarEvents.length + 1,
-    title,
-    date,
-    ownerId
-  };
+  const query = `
+    INSERT INTO calendar (start_time, end_time, class_id)
+    VALUES (?, ?, ?)
+  `;
 
-  calendarEvents.push(newEvent);
-  res.status(201).json(newEvent);
+  db.query(query, [start_time, end_time, class_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // Return the newly created event with its auto-generated idcalendar
+    res.status(201).json({
+      idcalendar: result.insertId,
+      start_time,
+      end_time,
+      class_id,
+    });
+  });
 });
 
 
 // PUT /calendar/:id
 app.put('/calendar/:id', (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { title, date, ownerId } = req.body;
+  const { start_time, end_time, class_id } = req.body;
 
-  const event = calendarEvents.find(e => e.id === eventId);
-  if (!event) {
-    return res.status(404).json({ error: "Event not found" });
+  if (!start_time && !end_time && !class_id) {
+    return res.status(400).json({ error: "At least one field (start_time, end_time, class_id) is required to update" });
   }
 
-  if (title) event.title = title;
-  if (date) event.date = date;
-  if (ownerId) event.ownerId = ownerId;
+  // Build dynamic query parts and values based on what was sent
+  const fields = [];
+  const values = [];
 
-  res.json(event);
+  if (start_time) {
+    fields.push("start_time = ?");
+    values.push(start_time);
+  }
+  if (end_time) {
+    fields.push("end_time = ?");
+    values.push(end_time);
+  }
+  if (class_id) {
+    fields.push("class_id = ?");
+    values.push(class_id);
+  }
+
+  values.push(eventId);
+
+  const query = `
+    UPDATE calendar SET ${fields.join(", ")} WHERE idcalendar = ?
+  `;
+
+  db.query(query, values, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Calendar event not found" });
+    }
+
+    // Return the updated event (fetch fresh from DB)
+    db.query('SELECT * FROM calendar WHERE idcalendar = ?', [eventId], (err2, rows) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json(rows[0]);
+    });
+  });
 });
+
 
 
 // DELETE /calendar/:id - delete one event by id
 app.delete('/calendar/:id', (req, res) => {
   const eventId = parseInt(req.params.id);
-  const index = calendarEvents.findIndex(e => e.id === eventId);
-  if (index === -1) return res.status(404).json({ error: "Event not found" });
 
-  const deletedEvent = calendarEvents.splice(index, 1);
-  res.json(deletedEvent[0]);
+  db.query('DELETE FROM calendar WHERE idcalendar = ?', [eventId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Calendar event not found" });
+    }
+
+    res.json({ message: `Deleted calendar event with id ${eventId}` });
+  });
 });
+
 
 // DELETE /calendar - delete all calendar events
 app.delete('/calendar', (req, res) => {
-  calendarEvents.length = 0;  // clears the array in place
-  res.json({ message: "All calendar events deleted" });
-});
-
-app.get('/testdb', (req, res) => {
-  db.query('SELECT 1 + 1 AS solution', (err, results) => {
+  db.query('DELETE FROM calendar', (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);  // Should return [{ solution: 2 }]
+    res.json({ message: `Deleted ${result.affectedRows} calendar events` });
   });
 });
+
 
 
 // Server listener (keep this at the very end)
