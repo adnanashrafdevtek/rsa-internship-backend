@@ -1,8 +1,6 @@
-POST http://localhost:3000/calendar
+PUT http://localhost:3000/calendar/2
 Content-Type: application/json
 
 {
-  "title": "Meeting",
-  "date": "2025-07-20",
-  "ownerId": "student123"
+  "date": "6/7/2025"
 }
