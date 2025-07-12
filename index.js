@@ -1,6 +1,8 @@
 const express = require('express');
+const db = require('./db');
 const app = express();
 const PORT = 3000;
+
 
 app.use(express.json());
 
@@ -59,10 +61,19 @@ app.delete('/books/:id', (req, res) => {
   res.json(deleted[0]);
 });
 
-// Calendars Route
 app.get('/allCalendars', (req, res) => {
-  res.json(calendarEvents);
+  const query = `
+    SELECT c.idcalendar, c.start_time, c.end_time, c.class_id, cl.class_name
+    FROM calendar c
+    JOIN class cl ON c.class_id = cl.id
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
+
+
 
 // Start server
 
@@ -131,6 +142,14 @@ app.delete('/calendar', (req, res) => {
   calendarEvents.length = 0;  // clears the array in place
   res.json({ message: "All calendar events deleted" });
 });
+
+app.get('/testdb', (req, res) => {
+  db.query('SELECT 1 + 1 AS solution', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);  // Should return [{ solution: 2 }]
+  });
+});
+
 
 // Server listener (keep this at the very end)
 app.listen(PORT, () => {
