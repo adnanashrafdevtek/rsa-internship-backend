@@ -22,6 +22,17 @@ export default function StudentList() {
   const [deleting, setDeleting] = useState(false);
   const [showCheckboxes, setShowCheckboxes] = useState(false);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const filteredStudents = students.filter((student) =>
+    `${student.first_name} ${student.last_name}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
+
   useEffect(() => {
     fetch("http://localhost:3000/api/students")
       .then((res) => res.json())
@@ -42,8 +53,8 @@ export default function StudentList() {
       const data = await res.json();
 
       const formatted = data.map((event) => ({
-        id: event.idcalendar,
-        title: event.class_name,
+        id: Number(event.id),
+        title: event.title || "No Title",
         start: new Date(event.start_time),
         end: new Date(event.end_time),
       }));
@@ -66,22 +77,13 @@ export default function StudentList() {
     }
   }, [selectedStudent]);
 
-  const filteredStudents = students.filter((student) =>
-    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
   const handleSelectSlot = async ({ start, end }) => {
     if (showCheckboxes) return;
 
     const title = window.prompt("Enter event title:");
     if (!title) return;
 
-    const classId = selectedStudent.class_id || 1;
+    const classId = 1;
 
     try {
       const res = await fetch("http://localhost:3000/calendar", {
@@ -91,6 +93,7 @@ export default function StudentList() {
           start_time: moment(start).format("YYYY-MM-DD HH:mm:ss"),
           end_time: moment(end).format("YYYY-MM-DD HH:mm:ss"),
           class_id: classId,
+          event_title: title,
         }),
       });
 
@@ -105,7 +108,7 @@ export default function StudentList() {
           [selectedStudent.id]: [
             ...currentEvents,
             {
-              id: newEvent.idcalendar,
+              id: Number(newEvent.idcalendar),
               title,
               start: new Date(newEvent.start_time),
               end: new Date(newEvent.end_time),
@@ -140,10 +143,13 @@ export default function StudentList() {
     setDeleting(true);
     try {
       for (const eventId of selectedEvents) {
-        const res = await fetch(`http://localhost:3000/calendar/${eventId}`, {
+        const res = await fetch(`http://localhost:3000/calendar/${Number(eventId)}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Failed to delete event");
+        if (!res.ok) {
+          console.error(`Failed to delete event with id ${eventId}`);
+          continue;
+        }
       }
 
       setStudentSchedules((prev) => {
@@ -208,7 +214,6 @@ export default function StudentList() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={searchStyle}
             />
-
             <p style={{ marginBottom: "15px", marginTop: "10px" }}>
               Select a student to view their schedule:
             </p>
@@ -250,12 +255,8 @@ export default function StudentList() {
               <button
                 style={{ ...buttonStyle, backgroundColor: "#c0392b" }}
                 onClick={() => {
-                  if (showCheckboxes) {
-                    setShowCheckboxes(false);
-                    setSelectedEvents(new Set());
-                  } else {
-                    setShowCheckboxes(true);
-                  }
+                  setShowCheckboxes((prev) => !prev);
+                  setSelectedEvents(new Set());
                 }}
               >
                 {showCheckboxes ? "Cancel Delete" : "Delete Events"}
@@ -313,7 +314,7 @@ export default function StudentList() {
 
 const buttonStyle = {
   padding: "10px 15px",
-  backgroundColor: "#c0392b", // red default
+  backgroundColor: "#c0392b",
   color: "white",
   border: "none",
   borderRadius: "4px",
