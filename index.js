@@ -47,69 +47,57 @@ app.get('/api/teachers', (req, res) => {
 });
 
 // Calendar routes
-app.get('/allCalendars', (req, res) => {
+app.get('/myCalendar', (req, res) => {
+  // ignore userId param for now
   const query = `
-    SELECT c.idcalendar, c.start_time, c.end_time, c.class_id, cl.class_name
-    FROM calendar c
-    JOIN class cl ON c.class_id = cl.id
+    SELECT idcalendar, start_time, end_time, class_id, event_title
+    FROM calendar
   `;
+
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+
+    const formatted = results.map(event => ({
+      id: event.idcalendar,
+      start_time: event.start_time,
+      end_time: event.end_time,
+      class_id: event.class_id,
+      title: event.event_title || "No Title",
+    }));
+
+    res.json(formatted);
   });
 });
 
-app.get('/myCalendar', (req, res) => {
-  const studentId = req.query.userId;
 
-  if (!studentId) {
-    return res.status(400).json({ error: "Missing userId query parameter" });
-  }
-
-  const query = `
-    SELECT c.idcalendar, c.start_time, c.end_time, c.class_id, cl.class_name
-    FROM calendar c
-    JOIN class cl ON c.class_id = cl.id
-    JOIN student_class sc ON sc.class_id = cl.id
-    WHERE sc.user_id = ?
-  `;
-
-  db.query(query, [studentId], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
+// Add calendar event
 app.post('/calendar', (req, res) => {
-  const { start_time, end_time, class_id } = req.body;
+  const { start_time, end_time, class_id, event_title } = req.body;
 
-  if (!start_time || !end_time || !class_id) {
-    return res.status(400).json({ error: "Missing start_time, end_time, or class_id" });
+  if (!start_time || !end_time || !class_id || !event_title) {
+    return res.status(400).json({ error: "start_time, end_time, class_id, and event_title are required" });
   }
 
-  const query = `
-    INSERT INTO calendar (start_time, end_time, class_id)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(query, [start_time, end_time, class_id], (err, result) => {
+  const sql = `INSERT INTO calendar (start_time, end_time, class_id, event_title) VALUES (?, ?, ?, ?)`;
+  db.query(sql, [start_time, end_time, class_id, event_title], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
 
-    res.status(201).json({
+    res.json({
       idcalendar: result.insertId,
       start_time,
       end_time,
       class_id,
+      event_title,
     });
   });
 });
 
 app.put('/calendar/:id', (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { start_time, end_time, class_id } = req.body;
+  const { start_time, end_time, class_id, event_title } = req.body;
 
-  if (!start_time && !end_time && !class_id) {
-    return res.status(400).json({ error: "At least one field (start_time, end_time, class_id) is required to update" });
+  if (!start_time && !end_time && !class_id && !event_title) {
+    return res.status(400).json({ error: "At least one field (start_time, end_time, class_id, event_title) is required to update" });
   }
 
   const fields = [];
@@ -126,6 +114,10 @@ app.put('/calendar/:id', (req, res) => {
   if (class_id) {
     fields.push("class_id = ?");
     values.push(class_id);
+  }
+  if (event_title) {
+    fields.push("event_title = ?");
+    values.push(event_title);
   }
 
   values.push(eventId);
