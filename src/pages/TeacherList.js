@@ -95,6 +95,7 @@ export default function TeacherList() {
           start_time: startCST,
           end_time: endCST,
           class_id: classId,
+          class_name: title,
         }),
       });
 
