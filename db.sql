@@ -51,14 +51,15 @@ DROP TABLE IF EXISTS `class`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `class` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `class_name` varchar(45) NOT NULL,
-  `grade` varchar(45) NOT NULL,
-  `classcol` varchar(45) DEFAULT NULL,
+  `name` varchar(45) NOT NULL,
+  `grade_level` varchar(45) DEFAULT NULL,
   `teacher_id` int NOT NULL,
+  `start_time` varchar(10) DEFAULT NULL,
+  `end_time` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`id`,`teacher_id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,7 +68,7 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','3',NULL,2),(2,'MATH1314','3',NULL,2);
+INSERT INTO `class` VALUES (1,'ENG101','12',2,'11:15 AM','11:45 AM'),(2,'MATH1314','3',2,'9:45 AM','10:35 AM'),(3,'ENG 3048','3',2,'9:15 AM','10:30 PM'),(6,'Science','9',4,'8:30 AM','4:35 PM');
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -117,7 +118,7 @@ CREATE TABLE `user` (
   `password` varchar(45) NOT NULL,
   `status` tinyint NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -126,7 +127,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1);
+INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1),(4,'said','musa','said.musa@gmail.com','ahahah','TEACHER','00000',1);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -139,4 +140,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-07-16 13:38:38
+-- Dump completed on 2025-07-19 16:35:00
