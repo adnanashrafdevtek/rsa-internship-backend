@@ -7,6 +7,31 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+
+
+//TASKS
+/*
+1 - Upon adding  a new user, send unique activation link
+2- when user clicks on activation link, let him set new password and activate account
+
+*/
+
+app.post('/api/user', (req, res) => {
+  // ignore userId param for now
+  // firstname, lastname, email,  role, listOfClasses
+  const { firstName, lastName , emailAddress, address, role} = req.body;
+  
+  const sql = `INSERT INTO user (first_name, last_name, email, address, status,password, role) VALUES (?, ?, ?, ?,?,?,?)`;
+  db.query(sql, [firstName, lastName, emailAddress, address,0,"aasdsasdaa",role], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    res.json({
+      id: result.insertId,
+      firstName
+    });
+  });
+});
+
 // Users route (all active users)
 app.get('/api/users', (req, res) => {
   const query = `
