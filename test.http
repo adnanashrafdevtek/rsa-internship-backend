@@ -1,2 +1,1 @@
-DELETE http://localhost:3000/calendar/6
-
+http://localhost:3000/api/classes

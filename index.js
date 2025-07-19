@@ -46,6 +46,61 @@ app.get('/api/teachers', (req, res) => {
   });
 });
 
+// Classes GET route
+app.get('/api/classes', (req, res) => {
+  const query = `
+    SELECT 
+      c.id,
+      c.name,
+      c.grade_level,
+      c.start_time,
+      c.end_time,
+      u.first_name AS teacher_first_name,
+      u.last_name AS teacher_last_name
+    FROM class c
+    LEFT JOIN user u ON c.teacher_id = u.id
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const formatted = results.map(row => ({
+      id: row.id,
+      name: row.name,
+      grade_level: row.grade_level,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      teacher_first_name: row.teacher_first_name,
+      teacher_last_name: row.teacher_last_name,
+    }));
+
+    res.json(formatted);
+  });
+});
+
+// Classes POST route - Add new class
+app.post('/api/classes', (req, res) => {
+  const { name, grade_level, teacher_id, start_time, end_time } = req.body;
+
+  if (!name || !grade_level || !teacher_id) {
+    return res.status(400).json({ error: "Name, grade_level, and teacher_id are required" });
+  }
+
+  const sql = `INSERT INTO class (name, grade_level, teacher_id, start_time, end_time) VALUES (?, ?, ?, ?, ?)`;
+  db.query(sql, [name, grade_level, teacher_id, start_time || null, end_time || null], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    res.json({
+      id: result.insertId,
+      name,
+      grade_level,
+      teacher_id,
+      start_time,
+      end_time,
+    });
+  });
+});
+
 // Calendar routes
 app.get('/myCalendar', (req, res) => {
   // ignore userId param for now
@@ -68,7 +123,6 @@ app.get('/myCalendar', (req, res) => {
     res.json(formatted);
   });
 });
-
 
 // Add calendar event
 app.post('/calendar', (req, res) => {
@@ -160,6 +214,58 @@ app.delete('/calendar', (req, res) => {
     res.json({ message: `Deleted ${result.affectedRows} calendar events` });
   });
 });
+
+// Delete a class by ID
+app.delete('/api/classes/:id', (req, res) => {
+  const classId = parseInt(req.params.id);
+  if (!classId) return res.status(400).json({ error: "Invalid class ID" });
+
+  db.query('DELETE FROM class WHERE id = ?', [classId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) return res.status(404).json({ error: "Class not found" });
+
+    res.json({ message: `Class ${classId} deleted successfully` });
+  });
+});
+
+// Update a class
+app.put('/api/classes/:id', (req, res) => {
+  const classId = parseInt(req.params.id);
+  const { name, grade_level, teacher_id, start_time, end_time } = req.body;
+
+  const query = `
+    UPDATE class
+    SET name = ?, grade_level = ?, teacher_id = ?, start_time = ?, end_time = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    query,
+    [name, grade_level, teacher_id, start_time, end_time, classId],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: 'Class not found' });
+
+      res.json({ message: 'Class updated successfully' });
+    }
+  );
+});
+
+// Delete a class
+app.delete('/api/classes/:id', (req, res) => {
+  const classId = parseInt(req.params.id);
+  const query = `DELETE FROM class WHERE id = ?`;
+
+  db.query(query, [classId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ error: 'Class not found' });
+
+    res.json({ message: 'Class deleted successfully' });
+  });
+});
+
 
 // Server listener
 app.listen(PORT, () => {
