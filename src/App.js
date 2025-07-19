@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Student from "./pages/Users";
-import ClassApp from "./pages/ClassApp";
+import Classes from "./pages/Classes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import ResetPassword from "./pages/ResetPassword";
@@ -30,7 +30,7 @@ function App() {
             path="/class"
             element={
               <ProtectedRoute>
-                <ClassApp />
+                <Classes />
               </ProtectedRoute>
             }
           />
