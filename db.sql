@@ -28,8 +28,9 @@ CREATE TABLE `calendar` (
   `end_time` datetime DEFAULT NULL,
   `class_id` int NOT NULL,
   `event_title` varchar(255) DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
-) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +39,7 @@ CREATE TABLE `calendar` (
 
 LOCK TABLES `calendar` WRITE;
 /*!40000 ALTER TABLE `calendar` DISABLE KEYS */;
-INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,NULL),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',1,'Test Event'),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',1,'ea'),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',1,'ea');
+INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,'1',2),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',2,'2',4),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',6,'6',4),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL);
 /*!40000 ALTER TABLE `calendar` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -54,12 +55,12 @@ CREATE TABLE `class` (
   `name` varchar(45) NOT NULL,
   `grade_level` varchar(45) DEFAULT NULL,
   `teacher_id` int NOT NULL,
-  `start_time` varchar(10) DEFAULT NULL,
-  `end_time` varchar(10) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`,`teacher_id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +69,7 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','12',2,'11:15 AM','11:45 AM'),(2,'MATH1314','3',2,'9:45 AM','10:35 AM'),(3,'ENG 3048','3',2,'9:15 AM','10:30 PM'),(6,'Science','9',4,'8:30 AM','4:35 PM');
+INSERT INTO `class` VALUES (1,'ENG101','12',2,'2025-07-25 11:30:00','2025-07-25 00:30:00');
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -140,4 +141,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-07-19 16:35:00
+-- Dump completed on 2025-07-25 18:26:54
