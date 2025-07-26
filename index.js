@@ -55,6 +55,7 @@ app.get('/api/classes', (req, res) => {
       c.grade_level,
       c.start_time,
       c.end_time,
+      c.recurring_days,
       u.first_name AS teacher_first_name,
       u.last_name AS teacher_last_name
     FROM class c
@@ -70,6 +71,7 @@ app.get('/api/classes', (req, res) => {
       grade_level: row.grade_level,
       start_time: row.start_time,
       end_time: row.end_time,
+      recurring_days: row.recurring_days,
       teacher_first_name: row.teacher_first_name,
       teacher_last_name: row.teacher_last_name,
     }));
@@ -80,14 +82,14 @@ app.get('/api/classes', (req, res) => {
 
 // Classes POST route - Add new class
 app.post('/api/classes', (req, res) => {
-  const { name, grade_level, teacher_id, start_time, end_time } = req.body;
+  const { name, grade_level, teacher_id, start_time, end_time, recurring_days } = req.body;
 
   if (!name || !grade_level || !teacher_id) {
     return res.status(400).json({ error: "Name, grade_level, and teacher_id are required" });
   }
 
-  const sql = `INSERT INTO class (name, grade_level, teacher_id, start_time, end_time) VALUES (?, ?, ?, ?, ?)`;
-  db.query(sql, [name, grade_level, teacher_id, start_time || null, end_time || null], (err, result) => {
+  const sql = `INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES (?, ?, ?, ?, ?, ?)`;
+  db.query(sql, [name, grade_level, teacher_id, start_time || null, end_time || null, recurring_days || null], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
 
     res.json({
@@ -97,13 +99,13 @@ app.post('/api/classes', (req, res) => {
       teacher_id,
       start_time,
       end_time,
+      recurring_days,
     });
   });
 });
 
 // Calendar routes
 app.get('/myCalendar', (req, res) => {
-  // ignore userId param for now
   const query = `
     SELECT idcalendar, start_time, end_time, class_id, event_title
     FROM calendar
@@ -231,17 +233,17 @@ app.delete('/api/classes/:id', (req, res) => {
 // Update a class
 app.put('/api/classes/:id', (req, res) => {
   const classId = parseInt(req.params.id);
-  const { name, grade_level, teacher_id, start_time, end_time } = req.body;
+  const { name, grade_level, teacher_id, start_time, end_time, recurring_days } = req.body;
 
   const query = `
     UPDATE class
-    SET name = ?, grade_level = ?, teacher_id = ?, start_time = ?, end_time = ?
+    SET name = ?, grade_level = ?, teacher_id = ?, start_time = ?, end_time = ?, recurring_days = ?
     WHERE id = ?
   `;
 
   db.query(
     query,
-    [name, grade_level, teacher_id, start_time, end_time, classId],
+    [name, grade_level, teacher_id, start_time, end_time, recurring_days, classId],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       if (result.affectedRows === 0)
@@ -250,20 +252,6 @@ app.put('/api/classes/:id', (req, res) => {
       res.json({ message: 'Class updated successfully' });
     }
   );
-});
-
-// Delete a class
-app.delete('/api/classes/:id', (req, res) => {
-  const classId = parseInt(req.params.id);
-  const query = `DELETE FROM class WHERE id = ?`;
-
-  db.query(query, [classId], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (result.affectedRows === 0)
-      return res.status(404).json({ error: 'Class not found' });
-
-    res.json({ message: 'Class deleted successfully' });
-  });
 });
 
 // Get class by ID
@@ -278,6 +266,7 @@ app.get('/api/classes/:id', (req, res) => {
       c.grade_level,
       c.start_time,
       c.end_time,
+      c.recurring_days,
       c.teacher_id,
       u.first_name AS teacher_first_name,
       u.last_name AS teacher_last_name
@@ -293,8 +282,6 @@ app.get('/api/classes/:id', (req, res) => {
     res.json(results[0]);
   });
 });
-
-
 
 // Server listener
 app.listen(PORT, () => {
