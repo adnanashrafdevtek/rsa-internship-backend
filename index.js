@@ -266,6 +266,35 @@ app.delete('/api/classes/:id', (req, res) => {
   });
 });
 
+// Get class by ID
+app.get('/api/classes/:id', (req, res) => {
+  const classId = parseInt(req.params.id);
+  if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
+
+  const query = `
+    SELECT 
+      c.id,
+      c.name,
+      c.grade_level,
+      c.start_time,
+      c.end_time,
+      c.teacher_id,
+      u.first_name AS teacher_first_name,
+      u.last_name AS teacher_last_name
+    FROM class c
+    LEFT JOIN user u ON c.teacher_id = u.id
+    WHERE c.id = ?
+  `;
+
+  db.query(query, [classId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ error: 'Class not found' });
+
+    res.json(results[0]);
+  });
+});
+
+
 
 // Server listener
 app.listen(PORT, () => {
