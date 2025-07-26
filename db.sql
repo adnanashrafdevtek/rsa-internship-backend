@@ -57,10 +57,11 @@ CREATE TABLE `class` (
   `teacher_id` int NOT NULL,
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
+  `recurring_days` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`,`teacher_id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,7 +70,7 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','12',2,'2025-07-25 11:30:00','2025-07-25 00:30:00');
+INSERT INTO `class` VALUES (1,'ENG101','12',4,'2025-07-27 08:30:00','2025-07-27 10:30:00','Fri,Wed,Mon'),(11,'Math','4',2,'2025-07-31 10:30:00','2025-08-01 13:45:00','Wed,Thu'),(12,'Physics','11',2,'2025-07-27 18:00:00','2025-12-31 20:00:00','Tue,Fri');
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -85,10 +86,7 @@ CREATE TABLE `student_class` (
   `class_id` int NOT NULL,
   `teacher_id` int NOT NULL,
   PRIMARY KEY (`user_id`,`class_id`,`teacher_id`),
-  KEY `fk_class` (`class_id`,`teacher_id`),
-  CONSTRAINT `fk_class` FOREIGN KEY (`class_id`, `teacher_id`) REFERENCES `class` (`id`, `teacher_id`),
-  CONSTRAINT `fk_student` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `fk_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+  KEY `fk_class` (`class_id`,`teacher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -98,7 +96,6 @@ CREATE TABLE `student_class` (
 
 LOCK TABLES `student_class` WRITE;
 /*!40000 ALTER TABLE `student_class` DISABLE KEYS */;
-INSERT INTO `student_class` VALUES (3,1,2);
 /*!40000 ALTER TABLE `student_class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -141,4 +138,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-07-25 18:26:54
+-- Dump completed on 2025-07-26 12:25:21
