@@ -5,6 +5,8 @@ export default function Classes() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState([]);
+  const [studentsForGrade, setStudentsForGrade] = useState([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [showAddForm, setShowAddForm] = useState(false);
@@ -20,6 +22,7 @@ export default function Classes() {
   });
   const [showAddRecurring, setShowAddRecurring] = useState(false);
   const [showEditRecurring, setShowEditRecurring] = useState(false);
+  const [showAddStudentsFor, setShowAddStudentsFor] = useState(null);
 
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -42,6 +45,18 @@ export default function Classes() {
       });
   };
 
+  const fetchStudentsByGrade = async (grade) => {
+    if (!grade) return setStudentsForGrade([]);
+    try {
+    const res = await fetch(`http://localhost:3000/api/students/grade/${grade}`);
+      if (!res.ok) throw new Error('Failed to fetch students');
+      const data = await res.json();
+      setStudentsForGrade(data);
+    } catch {
+      setStudentsForGrade([]);
+    }
+  };
+
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
@@ -52,7 +67,6 @@ export default function Classes() {
     setEditForm({
       name: cls.name || '',
       grade_level: cls.grade_level || '',
-      // Fix #3: Make sure teacher_id is correctly set on edit
       teacher_id: cls.teacher_id !== undefined && cls.teacher_id !== null ? cls.teacher_id : '',
       start_date: cls.start_time?.slice(0, 10) || '',
       start_time: cls.start_time?.slice(11, 16) || '',
@@ -106,7 +120,6 @@ export default function Classes() {
     return `${date} ${time}:00`;
   };
 
-  // Convert 24h time string "HH:mm" to 12h "h:mm AM/PM"
   const to12HourTime = (time24) => {
     if (!time24) return '';
     const [hourStr, min] = time24.split(':');
@@ -116,32 +129,29 @@ export default function Classes() {
     return `${hour}:${min} ${ampm}`;
   };
 
-  // Fix #2: show time even if no date exists
   const formatDateTime = (dt) => {
-  if (!dt) return '';
+    if (!dt) return '';
 
-  // Expecting format "YYYY-MM-DD HH:mm:ss"
-  const date = dt.slice(0, 10);
-  const time24 = dt.slice(11, 16);
+    const date = dt.slice(0, 10);
+    const time24 = dt.slice(11, 16);
 
-  const isValidDate = date && date !== '0000-00-00' && date !== '1970-01-01';
-  const isValidTime = time24 && time24 !== '00:00';
+    const isValidDate = date && date !== '0000-00-00' && date !== '1970-01-01';
+    const isValidTime = time24 && time24 !== '00:00';
 
-  if (!isValidDate && isValidTime) {
-    return to12HourTime(time24);
-  }
+    if (!isValidDate && isValidTime) {
+      return to12HourTime(time24);
+    }
 
-  if (isValidDate && isValidTime) {
-    return `${date} ${to12HourTime(time24)}`;
-  }
+    if (isValidDate && isValidTime) {
+      return `${date} ${to12HourTime(time24)}`;
+    }
 
-  if (isValidDate && !isValidTime) {
-    return date;
-  }
+    if (isValidDate && !isValidTime) {
+      return date;
+    }
 
-  return '';
-};
-
+    return '';
+  };
 
   const saveEdit = async () => {
     try {
@@ -330,6 +340,20 @@ export default function Classes() {
                         </button>{' '}
                         <button onClick={() => deleteClass(c.id)} style={deleteBtnStyle}>
                           Delete
+                        </button>{' '}
+                        <button
+                          onClick={() => {
+                            if (showAddStudentsFor === c.id) {
+                              setShowAddStudentsFor(null);
+                            } else {
+                              fetchStudentsByGrade(c.grade_level);
+                              setSelectedStudentIds([]);
+                              setShowAddStudentsFor(c.id);
+                            }
+                          }}
+                          style={{ ...editButtonStyle, backgroundColor: '#ff9800', marginLeft: 8 }}
+                        >
+                          Add Students
                         </button>
                       </td>
                     </tr>
@@ -348,10 +372,82 @@ export default function Classes() {
                       <td style={tdStyle}>
                         <button onClick={() => startEditing(c)} style={editButtonStyle}>
                           Edit
+                        </button>{' '}
+                        <button
+                          onClick={() => {
+                            if (showAddStudentsFor === c.id) {
+                              setShowAddStudentsFor(null);
+                            } else {
+                              fetchStudentsByGrade(c.grade_level);
+                              setSelectedStudentIds([]);
+                              setShowAddStudentsFor(c.id);
+                            }
+                          }}
+                          style={{ ...editButtonStyle, backgroundColor: '#ff9800', marginLeft: 8 }}
+                        >
+                          Add Students
                         </button>
                       </td>
                     </tr>
                   )
+                )}
+
+                {showAddStudentsFor && (
+                  <tr>
+                    <td colSpan={7} style={{ padding: 12, background: '#fff8e1' }}>
+                      <div>
+                        <strong>Select Students to Add to Class (Grade {classes.find(c => c.id === showAddStudentsFor)?.grade_level})</strong>
+                      </div>
+                      <div style={{ maxHeight: 150, overflowY: 'auto', marginTop: 8 }}>
+                        {studentsForGrade.length === 0 && <div>No students found for this grade.</div>}
+                        {studentsForGrade.map(s => (
+                          <label key={s.id} style={{ display: 'block', cursor: 'pointer', padding: '4px 8px' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedStudentIds.includes(s.id)}
+                              onChange={() => {
+                                setSelectedStudentIds(prev =>
+                                  prev.includes(s.id)
+                                    ? prev.filter(id => id !== s.id)
+                                    : [...prev, s.id]
+                                );
+                              }}
+                            />{' '}
+                            {s.first_name} {s.last_name} (Grade {s.grade_level})
+                          </label>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: 12 }}>
+                        <button
+                          onClick={async () => {
+                            if (selectedStudentIds.length === 0) {
+                              alert('Select at least one student');
+                              return;
+                            }
+                            try {
+                              const res = await fetch(`http://localhost:3000/api/class/${showAddStudentsFor}/students`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ studentIds: selectedStudentIds }),
+                              });
+                              if (!res.ok) throw new Error('Failed to add students');
+                              alert('Students added to class!');
+                              setShowAddStudentsFor(null);
+                              // Optionally refresh classes or students if needed
+                            } catch (e) {
+                              alert(e.message);
+                            }
+                          }}
+                          style={{ ...saveBtnStyle, marginRight: 8 }}
+                        >
+                          Save Students
+                        </button>
+                        <button onClick={() => setShowAddStudentsFor(null)} style={cancelBtnStyle}>
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -398,19 +494,15 @@ export default function Classes() {
                   <input name="end_date" type="date" value={addForm.end_date} onChange={handleAddChange} style={inputStyle} />
                   <input name="end_time" type="time" value={addForm.end_time} onChange={handleAddChange} style={inputStyle} />
                 </div>
-
-                {/* Fix #1: wrap recurring days button in formRowStyle with label to align properly */}
                 <div style={{ ...formRowStyle, alignItems: 'flex-start' }}>
                   <label style={labelStyle}>Recurring Days:</label>
                   <div style={{ position: 'relative' }}>
                     <button
                       type="button"
                       onClick={() => setShowAddRecurring(prev => !prev)}
-                      style={{ ...editButtonStyle, minWidth: 140, textAlign: 'left' }}
+                      style={{ ...editButtonStyle, minWidth: 90 }}
                     >
-                      {addForm.recurring_days.length > 0
-                        ? addForm.recurring_days.join(', ')
-                        : 'Select recurring days'}
+                      {addForm.recurring_days.length > 0 ? addForm.recurring_days.join(', ') : 'Select days'}
                     </button>
                     {showAddRecurring && (
                       <div style={submenuStyle}>
@@ -428,10 +520,9 @@ export default function Classes() {
                     )}
                   </div>
                 </div>
-
-                <div style={{ marginTop: 24 }}>
+                <div style={{ marginTop: 12 }}>
                   <button onClick={addClass} style={saveBtnStyle}>
-                    Save New Class
+                    Save Class
                   </button>{' '}
                   <button onClick={() => setShowAddForm(false)} style={cancelBtnStyle}>
                     Cancel
@@ -446,90 +537,106 @@ export default function Classes() {
   );
 }
 
+// Styles
 const thStyle = {
+  padding: '10px 6px',
+  borderBottom: '2px solid #ccc',
   textAlign: 'left',
-  padding: '12px 16px',
-  fontWeight: 'bold',
-  borderBottom: '2px solid #ddd',
 };
-const tdStyle = { padding: '12px 16px', borderBottom: '1px solid #eee', verticalAlign: 'top' };
+
+const tdStyle = {
+  padding: '8px 6px',
+  borderBottom: '1px solid #eee',
+  verticalAlign: 'middle',
+};
+
 const inputStyle = {
   width: '100%',
-  padding: '6px 8px',
-  fontSize: '14px',
-  borderRadius: 4,
-  border: '1px solid #ccc',
-  marginBottom: 4,
+  padding: 6,
+  fontSize: 14,
+  boxSizing: 'border-box',
 };
+
 const editButtonStyle = {
+  padding: '6px 10px',
+  fontSize: 13,
+  cursor: 'pointer',
   backgroundColor: '#4caf50',
-  color: 'white',
+  color: '#fff',
   border: 'none',
-  padding: '6px 12px',
-  cursor: 'pointer',
   borderRadius: 4,
 };
+
 const saveBtnStyle = {
+  padding: '6px 14px',
+  fontSize: 14,
+  cursor: 'pointer',
   backgroundColor: '#2196f3',
-  color: 'white',
+  color: '#fff',
   border: 'none',
-  padding: '8px 16px',
-  cursor: 'pointer',
-  borderRadius: 6,
-  fontWeight: 'bold',
-};
-const cancelBtnStyle = {
-  backgroundColor: '#f44336',
-  color: 'white',
-  border: 'none',
-  padding: '8px 16px',
-  cursor: 'pointer',
-  borderRadius: 6,
-  fontWeight: 'bold',
-};
-const deleteBtnStyle = {
-  backgroundColor: '#9c27b0',
-  color: 'white',
-  border: 'none',
-  padding: '6px 12px',
-  cursor: 'pointer',
   borderRadius: 4,
 };
-const addNewBtnStyle = {
-  backgroundColor: '#673ab7',
-  color: 'white',
-  border: 'none',
-  padding: '10px 20px',
+
+const cancelBtnStyle = {
+  padding: '6px 14px',
+  fontSize: 14,
   cursor: 'pointer',
-  borderRadius: 6,
-  fontWeight: 'bold',
+  backgroundColor: '#f44336',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 4,
 };
+
+const deleteBtnStyle = {
+  padding: '6px 14px',
+  fontSize: 14,
+  cursor: 'pointer',
+  backgroundColor: '#d32f2f',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 4,
+};
+
+const addNewBtnStyle = {
+  padding: '10px 18px',
+  fontSize: 16,
+  cursor: 'pointer',
+  backgroundColor: '#1976d2',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
+};
+
+const submenuStyle = {
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  backgroundColor: '#fff',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  padding: 8,
+  zIndex: 1000,
+  width: 120,
+};
+
+const addFormContainer = {
+  backgroundColor: '#f9f9f9',
+  padding: 16,
+  borderRadius: 6,
+  maxWidth: 500,
+};
+
 const formRowStyle = {
   marginBottom: 12,
   display: 'flex',
   alignItems: 'center',
-  gap: 12,
+  gap: 8,
 };
+
 const labelStyle = {
-  minWidth: 100,
+  width: 110,
   fontWeight: 'bold',
+  fontSize: 14,
 };
-const addFormContainer = {
-  border: '1px solid #ddd',
-  borderRadius: 6,
-  padding: 20,
-  maxWidth: 600,
-};
-const submenuStyle = {
-  position: 'absolute',
-  backgroundColor: '#fff',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-  borderRadius: 4,
-  padding: 8,
-  top: '100%',
-  left: 0,
-  zIndex: 10,
-  minWidth: 120,
-  maxHeight: 160,
-  overflowY: 'auto',
-};
+
