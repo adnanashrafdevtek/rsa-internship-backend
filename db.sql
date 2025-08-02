@@ -7,7 +7,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -21,7 +21,7 @@
 
 DROP TABLE IF EXISTS `calendar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `calendar` (
   `idcalendar` int NOT NULL AUTO_INCREMENT,
   `start_time` datetime DEFAULT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE `calendar` (
   `class_id` int NOT NULL,
   `event_title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
-) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +38,11 @@ CREATE TABLE `calendar` (
 
 LOCK TABLES `calendar` WRITE;
 /*!40000 ALTER TABLE `calendar` DISABLE KEYS */;
-INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,NULL),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',1,'Test Event'),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',1,'ea'),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',1,'ea');
+INSERT INTO `calendar` VALUES 
+(58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,NULL),
+(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',1,'Test Event'),
+(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',1,'ea'),
+(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',1,'ea');
 /*!40000 ALTER TABLE `calendar` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -48,7 +52,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `class`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `class` (
   `id` int NOT NULL AUTO_INCREMENT,
   `class_name` varchar(45) NOT NULL,
@@ -58,7 +62,7 @@ CREATE TABLE `class` (
   PRIMARY KEY (`id`,`teacher_id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,7 +71,9 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','3',NULL,2),(2,'MATH1314','3',NULL,2);
+INSERT INTO `class` VALUES 
+(1,'ENG101','3',NULL,2),
+(2,'MATH1314','3',NULL,2);
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -77,7 +83,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `student_class`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `student_class` (
   `user_id` int NOT NULL,
   `class_id` int NOT NULL,
@@ -85,9 +91,8 @@ CREATE TABLE `student_class` (
   PRIMARY KEY (`user_id`,`class_id`,`teacher_id`),
   KEY `fk_class` (`class_id`,`teacher_id`),
   CONSTRAINT `fk_class` FOREIGN KEY (`class_id`, `teacher_id`) REFERENCES `class` (`id`, `teacher_id`),
-  CONSTRAINT `fk_student` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
   CONSTRAINT `fk_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -106,7 +111,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
   `id` int NOT NULL AUTO_INCREMENT,
   `first_name` varchar(45) NOT NULL,
@@ -116,8 +121,10 @@ CREATE TABLE `user` (
   `role` varchar(45) NOT NULL,
   `password` varchar(45) NOT NULL,
   `status` tinyint NOT NULL DEFAULT '1',
+  `activation_token` varchar(255),
+  `activation_expires` datetime,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -126,11 +133,16 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1);
+INSERT INTO `user` VALUES 
+(1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1,NULL,NULL),
+(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1,NULL,NULL),
+(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1,NULL,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+-- Dump completed on 2025-07-26 12:25:21
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
@@ -138,5 +150,3 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2025-07-16 13:38:38
