@@ -69,13 +69,14 @@ function App() {
             element={<ResetPassword />}
           />
           <Route
-            path="/rosters"
-            element={
-              <ProtectedRoute>
-                <ClassRosters />
-              </ProtectedRoute>
-            }
-          />
+  path="/rosters/:classId"
+  element={
+    <ProtectedRoute>
+      <ClassRosters />
+    </ProtectedRoute>
+  }
+/>
+
         </Routes>
       </Router>
     </AuthProvider>
