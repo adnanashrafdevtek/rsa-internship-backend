@@ -184,6 +184,83 @@ app.delete('/api/classes/:id', async (req, res) => {
   }
 });
 
+// ✅ NEW: Get students by grade level
+app.get('/api/students/grade/:gradeLevel', async (req, res) => {
+  const gradeLevel = req.params.gradeLevel;
+  try {
+    const [students] = await db.query(
+      'SELECT id, first_name, last_name, grade_level FROM user WHERE role = "student" AND grade_level = ? AND status = 1',
+      [gradeLevel]
+    );
+    res.json(students);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch students by grade' });
+  }
+});
+
+
+// ✅ POST /api/classes/:classId/students — add student to class
+// ... your existing requires, app setup, etc.
+
+app.post('/api/classes/:classId/students', async (req, res) => {
+  const classId = parseInt(req.params.classId);
+  const { student_id } = req.body;
+
+  if (!classId || !student_id) {
+    return res.status(400).json({ error: "Class ID and student ID are required" });
+  }
+
+  try {
+    const [existing] = await db.query(
+      'SELECT * FROM student_class WHERE class_id = ? AND user_id = ?',
+      [classId, student_id]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: "One or more of your students is already in the class" });
+    }
+
+    await db.query(
+      'INSERT INTO student_class (class_id, user_id) VALUES (?, ?)',
+      [classId, student_id]
+    );
+
+    res.status(201).json({ message: "Student added to class" });
+  } catch (err) {
+    console.error("Error adding student to class:", err);
+    res.status(500).json({ error: "Failed to add student to class" });
+  }
+});
+
+// ... your other routes and app.listen
+app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
+  const classId = parseInt(req.params.classId);
+  const studentId = parseInt(req.params.studentId);
+
+  if (!classId || !studentId) {
+    return res.status(400).json({ error: 'Class ID and student ID are required' });
+  }
+
+  try {
+    const [result] = await db.query(
+      'DELETE FROM student_class WHERE class_id = ? AND user_id = ?',
+      [classId, studentId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found in this class' });
+    }
+
+    res.json({ message: 'Student removed from class' });
+  } catch (err) {
+    console.error('Error removing student from class:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+
+
 // (Other calendar routes unchanged)
 
 app.listen(PORT, () => {
