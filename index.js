@@ -3,12 +3,130 @@ const cors = require('cors');
 const db = require('./db');
 const app = express();
 const PORT = 3000;
+const { Composio } = require("@composio/client");
+const crypto = require("crypto");
 
 app.use(cors());
 app.use(express.json());
 
+const crypto = require("crypto");
 
+async function onboardUser(email) {
+  // 1. Create user
+  await db.query(
+    "INSERT INTO users (email, password, status) VALUES (?, ?, ?)",
+    [email, "dummy_password", "INACTIVE"]
+  );
 
+  // 2. Get user ID
+  const [user] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+
+  // 3. Generate token
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+  // 4. Store in activation table
+  await db.query(
+    "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
+    [user.id, token, expiresAt]
+  );
+
+  // 5. Send email
+  const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+
+  await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+    method: "POST",
+    headers: {
+      "x-api-key": process.env.COMPOSIO_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      text: `Please activate your account here: ${activationLink}`,
+      user_id: email,
+    }),
+  });
+
+  console.log(`✅ Activation link sent to ${email}`);
+}
+
+// Your Composio API key from env
+const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
+
+// Helper function to fetch connected account info via direct fetch call
+async function fetchConnectedAccount(accountId) {
+  const url = `https://backend.composio.dev/api/v3/connected_accounts/`;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-api-key": COMPOSIO_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+    }
+
+    const body = await response.json();
+    return body;
+  } catch (error) {
+    console.error("Error fetching connected account:", error);
+    throw error;
+  }
+}
+
+app.get("/connected-account/:id", async (req, res) => {
+  const accountId = req.params.id;
+
+  try {
+    const accountInfo = await fetchConnectedAccount(accountId);
+    res.json({ success: true, accountInfo });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+const toolSlug = "GMAIL_SEND_EMAIL"; // adjust to correct tool slug
+
+const emailPayload = {
+  arguments: {
+    to: "recipient@example.com",
+    subject: "Test email from Composio",
+    body: "Hello! This is a test email sent via Composio API.",
+  },
+};
+
+app.post("/send-email", async (req, res) => {
+  try {
+    const { text, user_id } = req.body;
+
+    if (!text || !user_id) {
+      return res.status(400).json({ success: false, error: "Missing required fields: text and user_id" });
+    }
+
+    const response = await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+      method: "POST",
+      headers: {
+        "x-api-key": COMPOSIO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        user_id,
+      }),
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ success: false, error: body });
+    }
+
+    res.json({ success: true, data: body });
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 //TASKS
 /*
 1 - Upon adding  a new user, send unique activation link

@@ -12,6 +12,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@composio/client": "^0.1.0-alpha.29",
+    "@composio/core": "^0.1.39",
     "body-parser": "^2.2.0",
     "composio-core": "^0.5.39",
     "cors": "^2.8.5",
