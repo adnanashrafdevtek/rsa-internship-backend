@@ -140,3 +140,11 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-07-31 20:22:37
+
+DROP TABLE IF EXISTS user_activation;
+CREATE TABLE user_activation (
+  user_id INT PRIMARY KEY,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at DATETIME NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);

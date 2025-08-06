@@ -3,9 +3,46 @@ const cors = require('cors');
 const db = require('./db'); // promise-based pool
 const app = express();
 const PORT = 3000;
+const { Composio } = require("@composio/client");
+const crypto = require("crypto");
+const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
 
 app.use(cors());
 app.use(express.json());
+
+app.post("/send-email", async (req, res) => {
+  try {
+    const { text, user_id } = req.body;
+
+    if (!text || !user_id) {
+      return res.status(400).json({ success: false, error: "Missing required fields: text and user_id" });
+    }
+
+    const response = await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+      method: "POST",
+      headers: {
+        "x-api-key": COMPOSIO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        user_id,
+      }),
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ success: false, error: body });
+    }
+
+    res.json({ success: true, data: body });
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 // Helper to run queries with async/await and send errors properly
 async function runQuery(res, query, params = []) {
@@ -20,15 +57,67 @@ async function runQuery(res, query, params = []) {
 }
 
 // POST /api/user
-app.post('/api/user', async (req, res) => {
+app.post("/api/user", (req, res) => {
   const { firstName, lastName, emailAddress, address, role } = req.body;
-  const sql = `INSERT INTO user (first_name, last_name, email, address, status, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-  try {
-    const [result] = await db.query(sql, [firstName, lastName, emailAddress, address, 0, "aasdsasdaa", role]);
-    res.json({ id: result.insertId, firstName });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+
+  // 1. Insert user with dummy password and inactive status
+  const dummyPassword = "temporary";
+  db.query(
+    "INSERT INTO user (first_name, last_name, email, address, role, password, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [firstName, lastName, emailAddress, address, role, dummyPassword, 0],
+    (err, result) => {
+      if (err) {
+        console.error("❌ DB Insert Error:", err);
+        return res.status(500).json({ success: false, error: "Database insert failed" });
+      }
+
+      const userId = result.insertId;
+
+      // 2. Generate activation token
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // 3. Insert token
+      db.query(
+        "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
+        [userId, token, expiresAt],
+        (err2) => {
+          if (err2) {
+            console.error("❌ Token Insert Error:", err2);
+            return res.status(500).json({ success: false, error: "Token insert failed" });
+          }
+
+          // 4. Build activation link
+          const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+
+          // 5. Send activation email via Composio
+          fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+            method: "POST",
+            headers: {
+              "x-api-key": process.env.COMPOSIO_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
+              user_id: "mirza", // your connected Gmail
+            }),
+          })
+            .then((r) => r.json())
+            .then((emailResult) => {
+              res.json({
+                success: true,
+                firstName,
+                emailSent: emailResult.success || !emailResult.error,
+              });
+            })
+            .catch((err3) => {
+              console.error("❌ Email Error:", err3);
+              res.json({ success: true, firstName, emailSent: false });
+            });
+        }
+      );
+    }
+  );
 });
 
 // GET /api/users
@@ -320,3 +409,4 @@ app.get('/api/students/grade/:grade', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
+

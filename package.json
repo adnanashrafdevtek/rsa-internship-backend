@@ -12,12 +12,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@composio/client": "^0.1.0-alpha.30",
     "body-parser": "^2.2.0",
     "composio-core": "^0.5.39",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "mysql2": "^3.14.1",
+    "node-fetch": "^3.3.2",
     "openai": "^5.6.0"
   },
   "devDependencies": {
