@@ -5,52 +5,56 @@ const app = express();
 const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
+const fetch = require("node-fetch");
 
 app.use(cors());
 app.use(express.json());
 
-const crypto = require("crypto");
+// Modify your existing admin onboarding route
+app.post("/api/onboard", async (req, res) => {
+  const { email } = req.body;
 
-async function onboardUser(email) {
-  // 1. Create user
-  await db.query(
-    "INSERT INTO users (email, password, status) VALUES (?, ?, ?)",
-    [email, "dummy_password", "INACTIVE"]
-  );
+  try {
+    // ✅ You already insert user in DB, so just fetch their ID
+    const [user] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (!user) {
+      return res.status(400).json({ success: false, error: "User not found in DB" });
+    }
 
-  // 2. Get user ID
-  const [user] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    // ✅ Generate activation token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-  // 3. Generate token
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    // ✅ Insert token into user_activation
+    await db.query(
+      "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
+      [user.id, token, expiresAt]
+    );
 
-  // 4. Store in activation table
-  await db.query(
-    "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
-    [user.id, token, expiresAt]
-  );
+    // ✅ Build activation link
+    const activationLink = `http://localhost:3001/activation-form?token=${token}`;
 
-  // 5. Send email
-  const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+    // ✅ Send email via Composio
+    await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.COMPOSIO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: `Welcome! Please activate your account by clicking here: ${activationLink}`,
+        user_id: email,
+      }),
+    });
 
-  await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
-    method: "POST",
-    headers: {
-      "x-api-key": process.env.COMPOSIO_API_KEY,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      text: `Please activate your account here: ${activationLink}`,
-      user_id: email,
-    }),
-  });
-
-  console.log(`✅ Activation link sent to ${email}`);
-}
-
+    res.json({ success: true, message: "Activation email sent!" });
+  } catch (error) {
+    console.error("❌ Onboard Error:", error);
+    res.status(500).json({ success: false, error: "Failed to send activation email" });
+  }
+});
 // Your Composio API key from env
-const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
+  
 
 // Helper function to fetch connected account info via direct fetch call
 async function fetchConnectedAccount(accountId) {
@@ -134,20 +138,67 @@ app.post("/send-email", async (req, res) => {
 
 */
 
-app.post('/api/user', (req, res) => {
-  // ignore userId param for now
-  // firstname, lastname, email,  role, listOfClasses
-  const { firstName, lastName , emailAddress, address, role} = req.body;
-  
-  const sql = `INSERT INTO user (first_name, last_name, email, address, status,password, role) VALUES (?, ?, ?, ?,?,?,?)`;
-  db.query(sql, [firstName, lastName, emailAddress, address,0,"aasdsasdaa",role], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+app.post("/api/user", (req, res) => {
+  const { firstName, lastName, emailAddress, address, role } = req.body;
 
-    res.json({
-      id: result.insertId,
-      firstName
-    });
-  });
+  // 1. Insert user with dummy password and inactive status
+  const dummyPassword = "temporary";
+  db.query(
+    "INSERT INTO user (first_name, last_name, email, address, role, password, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [firstName, lastName, emailAddress, address, role, dummyPassword, 0],
+    (err, result) => {
+      if (err) {
+        console.error("❌ DB Insert Error:", err);
+        return res.status(500).json({ success: false, error: "Database insert failed" });
+      }
+
+      const userId = result.insertId;
+
+      // 2. Generate activation token
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // 3. Insert token
+      db.query(
+        "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
+        [userId, token, expiresAt],
+        (err2) => {
+          if (err2) {
+            console.error("❌ Token Insert Error:", err2);
+            return res.status(500).json({ success: false, error: "Token insert failed" });
+          }
+
+          // 4. Build activation link
+          const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+
+          // 5. Send activation email via Composio
+          fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+            method: "POST",
+            headers: {
+              "x-api-key": process.env.COMPOSIO_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
+              user_id: "haroonaahamat@gmail.com", // your connected Gmail
+            }),
+          })
+            .then((r) => r.json())
+            .then((emailResult) => {
+              res.json({
+                success: true,
+                firstName,
+                emailSent: emailResult.success || !emailResult.error,
+              });
+            })
+            .catch((err3) => {
+              console.error("❌ Email Error:", err3);
+              res.json({ success: true, firstName, emailSent: false });
+            });
+        }
+      );
+    }
+  );
 });
 
 // Users route (all active users)
