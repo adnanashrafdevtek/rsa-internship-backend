@@ -6,136 +6,113 @@ const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
 
+
 app.use(cors());
 app.use(express.json());
 
-// Modify your existing admin onboarding route
-app.post("/api/onboard", async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    // ✅ You already insert user in DB, so just fetch their ID
-    const [user] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
-    if (!user) {
-      return res.status(400).json({ success: false, error: "User not found in DB" });
-    }
-
-    // ✅ Generate activation token
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // ✅ Insert token into user_activation
-    await db.query(
-      "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
-      [user.id, token, expiresAt]
-    );
-
-    // ✅ Build activation link
-    const activationLink = `http://localhost:3001/activation-form?token=${token}`;
-
-    // ✅ Send email via Composio
-    await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.COMPOSIO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: `Welcome! Please activate your account by clicking here: ${activationLink}`,
-        user_id: email,
-      }),
-    });
-
-    res.json({ success: true, message: "Activation email sent!" });
-  } catch (error) {
-    console.error("❌ Onboard Error:", error);
-    res.status(500).json({ success: false, error: "Failed to send activation email" });
-  }
-});
-// Your Composio API key from env
-  
-
-// Helper function to fetch connected account info via direct fetch call
-async function fetchConnectedAccount(accountId) {
-  const url = `https://backend.composio.dev/api/v3/connected_accounts/`;
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "x-api-key": COMPOSIO_API_KEY,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-    }
-
-    const body = await response.json();
-    return body;
-  } catch (error) {
-    console.error("Error fetching connected account:", error);
-    throw error;
-  }
-}
-
-app.get("/connected-account/:id", async (req, res) => {
-  const accountId = req.params.id;
-
-  try {
-    const accountInfo = await fetchConnectedAccount(accountId);
-    res.json({ success: true, accountInfo });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-const toolSlug = "GMAIL_SEND_EMAIL"; // adjust to correct tool slug
-
-const emailPayload = {
-  arguments: {
-    to: "recipient@example.com",
-    subject: "Test email from Composio",
-    body: "Hello! This is a test email sent via Composio API.",
-  },
-};
-
-app.post("/send-email", async (req, res) => {
-  try {
-    const { text, user_id } = req.body;
-
-    if (!text || !user_id) {
-      return res.status(400).json({ success: false, error: "Missing required fields: text and user_id" });
-    }
-
-    const response = await fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
-      method: "POST",
-      headers: {
-        "x-api-key": COMPOSIO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text,
-        user_id,
-      }),
-    });
-
-    const body = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({ success: false, error: body });
-    }
-
-    res.json({ success: true, data: body });
-  } catch (error) {
-    console.error("❌ Error sending email:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 //TASKS
 /*
 1 - Upon adding  a new user, send unique activation link
 2- when user clicks on activation link, let him set new password and activate account
 
 */
+// Activation route
+
+// LOGIN ROUTE (no bcrypt, plain text check)
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: "Email and password are required" });
+  }
+
+  db.query("SELECT * FROM user WHERE email = ?", [email], (err, results) => {
+    if (err) {
+      console.error("❌ Login DB Error:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    const user = results[0];
+
+    // Check if account is activated
+    if (user.status !== 1) {
+      return res.status(403).json({ success: false, error: "Account not activated" });
+    }
+
+    // Compare passwords directly
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    // ✅ Login successful
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  });
+});
+
+app.post("/api/activate", (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ success: false, error: "Missing token or password" });
+  }
+
+  // Step 1: Find the activation token
+  db.query(
+    "SELECT user_id, expires_at FROM user_activation WHERE token = ?",
+    [token],
+    (err, results) => {
+      if (err) {
+        console.error("❌ Token lookup error:", err);
+        return res.status(500).json({ success: false, error: "Database error" });
+      }
+
+      if (results.length === 0) {
+        return res.status(400).json({ success: false, error: "Invalid or expired token" });
+      }
+
+      const { user_id, expires_at } = results[0];
+      if (new Date() > new Date(expires_at)) {
+        return res.status(400).json({ success: false, error: "Activation link expired" });
+      }
+
+      // Step 2: Update the user's password & status
+      db.query(
+        "UPDATE user SET password = ?, status = 1 WHERE id = ?",
+        [newPassword, user_id],
+        (err2) => {
+          if (err2) {
+            console.error("❌ Password update error:", err2);
+            return res.status(500).json({ success: false, error: "Failed to update password" });
+          }
+
+          // Step 3: Delete the activation token
+          db.query("DELETE FROM user_activation WHERE token = ?", [token], (err3) => {
+            if (err3) {
+              console.error("❌ Token delete error:", err3);
+              // not fatal: user is already activated
+            }
+
+            res.json({ success: true, message: "Account activated successfully!" });
+          });
+        }
+      );
+    }
+  );
+});
 
 app.post("/api/user", (req, res) => {
   const { firstName, lastName, emailAddress, address, role } = req.body;
@@ -179,7 +156,7 @@ app.post("/api/user", (req, res) => {
             },
             body: JSON.stringify({
               text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
-              user_id: "haroonaahamat@gmail.com", // your connected Gmail
+              user_id: "email", // your connected Gmail
             }),
           })
             .then((r) => r.json())

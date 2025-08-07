@@ -132,7 +132,7 @@ CREATE TABLE user_activation (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1),(4,'said','musa','said.musa@gmail.com','ahahah','TEACHER','00000',1);
+INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','admin','test',1),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','teacher','test123',1),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','student','12345',1),(4,'said','musa','said.musa@gmail.com','ahahah','teacher','00000',1);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
