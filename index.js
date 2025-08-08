@@ -16,6 +16,83 @@ app.use(express.json());
 2- when user clicks on activation link, let him set new password and activate account
 
 */
+// Activation route
+app.post("/api/activate", (req, res) => {
+  const { token, password } = req.body;
+
+  db.query(
+    "SELECT user_id, expires_at FROM user_activation WHERE token = ?",
+    [token],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
+
+      const { user_id, expires_at } = results[0];
+      if (new Date() > expires_at) {
+        return res.status(400).json({ error: "Token expired" });
+      }
+
+      // Update user password + activate
+      db.query(
+        "UPDATE user SET password = ?, status = 1 WHERE id = ?",
+        [password, user_id],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: "Failed to update user" });
+
+          // Remove used token
+          db.query("DELETE FROM user_activation WHERE token = ?", [token]);
+
+          res.json({ success: true });
+        }
+      );
+    }
+  );
+});
+
+// LOGIN ROUTE (no bcrypt, plain text check)
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: "Email and password are required" });
+  }
+
+  db.query("SELECT * FROM user WHERE email = ?", [email], (err, results) => {
+    if (err) {
+      console.error("❌ Login DB Error:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    const user = results[0];
+
+    // Check if account is activated
+    if (user.status !== 1) {
+      return res.status(403).json({ success: false, error: "Account not activated" });
+    }
+
+    // Compare passwords directly
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    // ✅ Login successful
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  });
+});
 
 app.post("/api/user", (req, res) => {
   const { firstName, lastName, emailAddress, address, role } = req.body;
