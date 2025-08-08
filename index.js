@@ -320,3 +320,38 @@ app.get('/api/students/grade/:grade', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
+// src/api/api.js
+import axios from "axios";
+
+/* =====================
+   TEACHER APIs
+===================== */
+// Get teacher's classes & schedule
+export const getTeacherSchedule = (teacherId) =>
+  axios.get(`/api/teachers/${teacherId}/classes`);
+
+/* =====================
+   CLASSROOM APIs
+===================== */
+// Add a new classroom location
+export const addClassroomLocation = (locationData) =>
+  axios.post("/api/classrooms", locationData);
+
+// Get all classroom locations
+export const getClassroomLocations = () =>
+  axios.get("/api/classrooms");
+
+/* =====================
+   CLASS APIs
+===================== */
+// Add a student to a class
+export const addStudentToClass = (classId, studentId) =>
+  axios.post(`/api/classes/${classId}/students`, { studentId });
+
+/* =====================
+   CALENDAR APIs
+===================== */
+// Add a calendar event (supports recurring)
+export const addCalendarEvent = (eventData) =>
+  axios.post("/api/calendar/events", eventData);
+
