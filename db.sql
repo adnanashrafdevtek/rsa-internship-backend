@@ -58,10 +58,10 @@ CREATE TABLE `class` (
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
   `recurring_days` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`id`,`teacher_id`),
+  PRIMARY KEY (`id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +70,7 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','12',2,'2025-07-27 13:30:00','2025-07-27 15:30:00','Fri,Wed,Mon'),(11,'Math','10',4,'2025-07-31 20:30:00','2025-08-01 23:45:00','Wed,Thu'),(12,'Physics','11',2,'2025-07-27 18:00:00','2025-12-31 20:00:00','Tue,Fri');
+INSERT INTO `class` VALUES (11,'Math','10',4,'2025-07-31 20:30:00','2025-08-01 23:45:00','Wed,Thu'),(12,'Physics','11',2,'2025-07-27 18:00:00','2025-12-31 20:00:00','Tue,Fri');
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -85,7 +85,9 @@ CREATE TABLE `student_class` (
   `user_id` int NOT NULL,
   `class_id` int NOT NULL,
   PRIMARY KEY (`user_id`,`class_id`),
-  KEY `fk_class` (`class_id`)
+  KEY `fk_class` (`class_id`),
+  CONSTRAINT `fk_student_class_class_id` FOREIGN KEY (`class_id`) REFERENCES `class` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_student_class_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -95,7 +97,7 @@ CREATE TABLE `student_class` (
 
 LOCK TABLES `student_class` WRITE;
 /*!40000 ALTER TABLE `student_class` DISABLE KEYS */;
-INSERT INTO `student_class` VALUES (5,1),(3,11);
+INSERT INTO `student_class` VALUES (3,11),(3,12),(5,12);
 /*!40000 ALTER TABLE `student_class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -139,4 +141,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-02 14:21:20
+-- Dump completed on 2025-08-08 16:10:46
