@@ -136,8 +136,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Helper to run queries with async/await and send errors properly
-
 // Helper for queries
 
 async function runQuery(res, query, params = []) {
