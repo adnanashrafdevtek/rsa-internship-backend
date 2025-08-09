@@ -30,7 +30,7 @@ CREATE TABLE `calendar` (
   `event_title` varchar(255) DEFAULT NULL,
   `user_id` int DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
-) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,7 +39,7 @@ CREATE TABLE `calendar` (
 
 LOCK TABLES `calendar` WRITE;
 /*!40000 ALTER TABLE `calendar` DISABLE KEYS */;
-INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,'1',2),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',2,'2',4),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',6,'6',4),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL);
+INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,'1',2),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',2,'2',4),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',6,'6',4),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL),(66,'2025-07-29 00:30:00','2025-07-29 05:30:00',1,'Science',NULL);
 /*!40000 ALTER TABLE `calendar` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -58,10 +58,10 @@ CREATE TABLE `class` (
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
   `recurring_days` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`id`,`teacher_id`),
+  PRIMARY KEY (`id`),
   KEY `fk_class_user_idx` (`teacher_id`),
   CONSTRAINT `fk_class_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +70,7 @@ CREATE TABLE `class` (
 
 LOCK TABLES `class` WRITE;
 /*!40000 ALTER TABLE `class` DISABLE KEYS */;
-INSERT INTO `class` VALUES (1,'ENG101','12',4,'2025-07-27 08:30:00','2025-07-27 10:30:00','Fri,Wed,Mon'),(11,'Math','10',2,'2025-07-31 15:30:00','2025-08-01 18:45:00','Wed,Thu'),(12,'Physics','11',2,'2025-07-27 18:00:00','2025-12-31 20:00:00','Tue,Fri');
+INSERT INTO `class` VALUES (11,'Math','10',4,'2025-07-31 20:30:00','2025-08-01 23:45:00','Wed,Thu'),(12,'Physics','11',2,'2025-07-27 18:00:00','2025-12-31 20:00:00','Tue,Fri');
 /*!40000 ALTER TABLE `class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -85,7 +85,9 @@ CREATE TABLE `student_class` (
   `user_id` int NOT NULL,
   `class_id` int NOT NULL,
   PRIMARY KEY (`user_id`,`class_id`),
-  KEY `fk_class` (`class_id`)
+  KEY `fk_class` (`class_id`),
+  CONSTRAINT `fk_student_class_class_id` FOREIGN KEY (`class_id`) REFERENCES `class` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_student_class_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -95,7 +97,7 @@ CREATE TABLE `student_class` (
 
 LOCK TABLES `student_class` WRITE;
 /*!40000 ALTER TABLE `student_class` DISABLE KEYS */;
-INSERT INTO `student_class` VALUES (5,1),(3,11);
+INSERT INTO `student_class` VALUES (3,11),(3,12),(5,12);
 /*!40000 ALTER TABLE `student_class` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -115,9 +117,9 @@ CREATE TABLE `user` (
   `role` varchar(45) NOT NULL,
   `password` varchar(45) NOT NULL,
   `status` tinyint NOT NULL DEFAULT '1',
-  `grade` varchar(10) DEFAULT NULL,
+  `grade_level` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -126,7 +128,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1,NULL),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1,NULL),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1,'10'),(4,'said','musa','said.musa@gmail.com','ahahah','TEACHER','00000',1,NULL),(5,'HARUN ','person','HARUN.person@gmail.com','student','STUDENT','uuuuuuu',1,'12');
+INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','ADMIN','test',1,NULL),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','TEACHER','test123',1,NULL),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','STUDENT','12345',1,'10'),(4,'said','musa','said.musa@gmail.com','ahahah','TEACHER','00000',1,NULL),(5,'HARUN ','person','HARUN.person@gmail.com','student','STUDENT','uuuuuuu',1,'12'),(6,'Muhammad','Hussein','muhammadrides@gmail.com','2504 Glacier St.','student','aasdsasdaa',0,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -139,4 +141,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-07-31 20:22:37
+-- Dump completed on 2025-08-08 16:10:46
