@@ -170,9 +170,8 @@ app.get('/api/users', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
-
+});
 // Helper to run queries with async/await and send errors properly
-=======
 // Helper for queries
 
 async function runQuery(res, query, params = []) {
