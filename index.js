@@ -172,6 +172,9 @@ app.get('/api/users', (req, res) => {
   });
 
 // Helper to run queries with async/await and send errors properly
+=======
+// Helper for queries
+
 async function runQuery(res, query, params = []) {
   try {
     const [results] = await db.query(query, params);
@@ -242,115 +245,58 @@ app.post('/api/classes', async (req, res) => {
   }
 });
 
-// GET /myCalendar
-app.get('/myCalendar', async (req, res) => {
-  const query = `SELECT idcalendar, start_time, end_time, class_id, event_title FROM calendar`;
-  const results = await runQuery(res, query);
-  if (!results) return;
-  const formatted = results.map(event => ({
-    id: event.idcalendar,
-    start_time: event.start_time,
-    end_time: event.end_time,
-    class_id: event.class_id,
-    title: event.event_title || "No Title",
-  }));
-  res.json(formatted);
-});
-
-// POST /calendar
-app.post('/calendar', async (req, res) => {
-  const { start_time, end_time, class_id, event_title } = req.body;
-  if (!start_time || !end_time || !class_id || !event_title) {
-    return res.status(400).json({ error: "start_time, end_time, class_id, and event_title are required" });
-  }
-  const sql = `INSERT INTO calendar (start_time, end_time, class_id, event_title) VALUES (?, ?, ?, ?)`;
-  try {
-    const [result] = await db.query(sql, [start_time, end_time, class_id, event_title]);
-    res.json({ idcalendar: result.insertId, start_time, end_time, class_id, event_title });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// PUT /calendar/:id
-app.put('/calendar/:id', async (req, res) => {
-  const eventId = parseInt(req.params.id);
-  const { start_time, end_time, class_id, event_title } = req.body;
-
-  if (!start_time && !end_time && !class_id && !event_title) {
-    return res.status(400).json({ error: "At least one field required to update" });
-  }
-
-  const fields = [];
-  const values = [];
-  if (start_time) {
-    fields.push("start_time = ?");
-    values.push(start_time);
-  }
-  if (end_time) {
-    fields.push("end_time = ?");
-    values.push(end_time);
-  }
-  if (class_id) {
-    fields.push("class_id = ?");
-    values.push(class_id);
-  }
-  if (event_title) {
-    fields.push("event_title = ?");
-    values.push(event_title);
-  }
-  values.push(eventId);
-
-  const query = `UPDATE calendar SET ${fields.join(", ")} WHERE idcalendar = ?`;
-
-  try {
-    const [result] = await db.query(query, values);
-    if (result.affectedRows === 0) return res.status(404).json({ error: "Calendar event not found" });
-
-    const [rows] = await db.query('SELECT * FROM calendar WHERE idcalendar = ?', [eventId]);
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /calendar/:id
-app.delete('/calendar/:id', async (req, res) => {
-  const eventId = parseInt(req.params.id);
-  try {
-    const [result] = await db.query('DELETE FROM calendar WHERE idcalendar = ?', [eventId]);
-    if (result.affectedRows === 0) return res.status(404).json({ error: "Calendar event not found" });
-    res.json({ message: `Deleted calendar event with id ${eventId}` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /calendar
-app.delete('/calendar', async (req, res) => {
-  try {
-    const [result] = await db.query('DELETE FROM calendar');
-    res.json({ message: `Deleted ${result.affectedRows} calendar events` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /api/classes/:id
-app.delete('/api/classes/:id', async (req, res) => {
+// GET /api/classes/:id — return single class info
+app.get('/api/classes/:id', async (req, res) => {
   const classId = parseInt(req.params.id);
-  if (!classId) return res.status(400).json({ error: "Invalid class ID" });
+  if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
+
+  const query = `
+    SELECT 
+      c.id,
+      c.name,
+      c.grade_level,
+      c.start_time,
+      c.end_time,
+      c.recurring_days,
+      u.first_name AS teacher_first_name,
+      u.last_name AS teacher_last_name
+    FROM class c
+    LEFT JOIN user u ON c.teacher_id = u.id
+    WHERE c.id = ?
+  `;
 
   try {
-    const [result] = await db.query('DELETE FROM class WHERE id = ?', [classId]);
-    if (result.affectedRows === 0) return res.status(404).json({ error: "Class not found" });
-    res.json({ message: `Class ${classId} deleted successfully` });
+    const [results] = await db.query(query, [classId]);
+    if (results.length === 0) return res.status(404).json({ error: 'Class not found' });
+    res.json(results[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in GET /api/classes/:id:', err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
-// PUT /api/classes/:id
+// **NEW** GET /api/classes/:id/students — return students for a class
+app.get('/api/classes/:id/students', async (req, res) => {
+  const classId = parseInt(req.params.id);
+  if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
+
+  const query = `
+    SELECT u.id, u.first_name, u.last_name, u.email, u.grade_level
+    FROM user u
+    INNER JOIN student_class sc ON sc.user_id = u.id
+    WHERE sc.class_id = ?
+  `;
+
+  try {
+    const [results] = await db.query(query, [classId]);
+    res.json(results);
+  } catch (err) {
+    console.error('Error in GET /api/classes/:id/students:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// PUT /api/classes/:id — update class info
 app.put('/api/classes/:id', async (req, res) => {
   const classId = parseInt(req.params.id);
   const { name, grade_level, teacher_id, start_time, end_time, recurring_days } = req.body;
@@ -366,104 +312,107 @@ app.put('/api/classes/:id', async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Class not found' });
     res.json({ message: 'Class updated successfully' });
   } catch (err) {
+    console.error('Error in PUT /api/classes/:id:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/classes/:id
-app.get('/api/classes/:id', async (req, res) => {
+// DELETE /api/classes/:id
+app.delete('/api/classes/:id', async (req, res) => {
   const classId = parseInt(req.params.id);
-  if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
-
-  const query = `
-    SELECT 
-      c.id,
-      c.name,
-      c.grade_level,
-      c.start_time,
-      c.end_time,
-      c.recurring_days,
-      c.teacher_id,
-      u.first_name AS teacher_first_name,
-      u.last_name AS teacher_last_name
-    FROM class c
-    LEFT JOIN user u ON c.teacher_id = u.id
-    WHERE c.id = ?
-  `;
+  if (!classId) return res.status(400).json({ error: "Invalid class ID" });
 
   try {
-    const [results] = await db.query(query, [classId]);
-    if (results.length === 0) return res.status(404).json({ error: 'Class not found' });
-    res.json(results[0]);
+    const [result] = await db.query('DELETE FROM class WHERE id = ?', [classId]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: "Class not found" });
+    res.json({ message: `Class ${classId} deleted successfully` });
   } catch (err) {
+    console.error('Error in DELETE /api/classes/:id:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /students/by-grade/:grade
-app.get('/students/by-grade/:grade', async (req, res) => {
-  const grade = req.params.grade;
-  const query = 'SELECT * FROM user WHERE role = "student" AND grade = ?';
+// ✅ NEW: Get students by grade level
+app.get('/api/students/grade/:gradeLevel', async (req, res) => {
+  const gradeLevel = req.params.gradeLevel;
+  try {
+    const [students] = await db.query(
+      'SELECT id, first_name, last_name, grade_level FROM user WHERE role = "student" AND grade_level = ? AND status = 1',
+      [gradeLevel]
+    );
+    res.json(students);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch students by grade' });
+  }
+});
+
+
+// ✅ POST /api/classes/:classId/students — add student to class
+// ... your existing requires, app setup, etc.
+
+app.post('/api/classes/:classId/students', async (req, res) => {
+  const classId = parseInt(req.params.classId);
+  const { student_id } = req.body;
+
+  if (!classId || !student_id) {
+    return res.status(400).json({ error: "Class ID and student ID are required" });
+  }
 
   try {
-    const [results] = await db.query(query, [grade]);
-    res.json(results);
+    const [existing] = await db.query(
+      'SELECT * FROM student_class WHERE class_id = ? AND user_id = ?',
+      [classId, student_id]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: "One or more of your students is already in the class" });
+    }
+
+    await db.query(
+      'INSERT INTO student_class (class_id, user_id) VALUES (?, ?)',
+      [classId, student_id]
+    );
+
+    res.status(201).json({ message: "Student added to class" });
   } catch (err) {
-    console.error('Error fetching students by grade:', err);
+    console.error("Error adding student to class:", err);
+    res.status(500).json({ error: "Failed to add student to class" });
+  }
+});
+
+// ... your other routes and app.listen
+app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
+  const classId = parseInt(req.params.classId);
+  const studentId = parseInt(req.params.studentId);
+
+  if (!classId || !studentId) {
+    return res.status(400).json({ error: 'Class ID and student ID are required' });
+  }
+
+  try {
+    const [result] = await db.query(
+      'DELETE FROM student_class WHERE class_id = ? AND user_id = ?',
+      [classId, studentId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found in this class' });
+    }
+
+    res.json({ message: 'Student removed from class' });
+  } catch (err) {
+    console.error('Error removing student from class:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// POST /class/:id/students
-app.post('/api/class/:id/students', async (req, res) => {
-  const classId = req.params.id;
-  const studentIds = req.body.studentIds;
 
-  if (!Array.isArray(studentIds)) {
-    return res.status(400).json({ error: 'studentIds must be an array' });
-  }
 
-  const connection = await db.getConnection();
-  try {
-    await connection.beginTransaction();
-
-    await connection.query('DELETE FROM student_class WHERE class_id = ?', [classId]);
-
-    if (studentIds.length > 0) {
-      const values = studentIds.map(id => [classId, id]);
-      // The query syntax for bulk insert with ? is ('INSERT INTO table (cols) VALUES ?', [values])
-      // but mysql2 requires the array wrapped differently:
-      await connection.query('INSERT INTO student_class (class_id, user_id) VALUES ?', [values]);
-    }
-
-    await connection.commit();
-    res.status(200).json({ message: 'Students assigned to class' });
-  } catch (err) {
-    await connection.rollback();
-    console.error('Error assigning students:', err);
-    res.status(500).send('Server error');
-  } finally {
-    connection.release();
-  }
-});
-
-// GET /api/students/grade/:grade
-app.get('/api/students/grade/:grade', async (req, res) => {
-  const grade = req.params.grade;
-  try {
-    const [students] = await db.query(
-      'SELECT id, first_name, last_name FROM user WHERE role = "student" AND grade = ?',
-      [grade]
-    );
-    res.json(students);
-  } catch (err) {
-    console.error('Error fetching students:', err);
-    res.status(500).send('Server error');
-  }
-});
+// (Other calendar routes unchanged)
 
 app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
 // src/api/api.js
 import axios from "axios";

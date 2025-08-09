@@ -1,2 +1,2 @@
-### Get students by grade
+### Get students in grade 10
 GET http://localhost:3000/api/students/grade/10
