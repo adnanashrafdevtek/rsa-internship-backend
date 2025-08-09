@@ -1,11 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const db = require('./db'); // promise-based pool
+import express from 'express';
+import cors from 'cors';
+import db from './db.js'; // promise-based pool
 const app = express();
 const PORT = 3000;
-const { Composio } = require("@composio/client");
-const crypto = require("crypto");
-const fetch = require("node-fetch");
+import { Composio } from "@composio/client";
+import crypto from "crypto";
+import fetch from "node-fetch";
 
 app.use(cors());
 app.use(express.json());
@@ -170,9 +170,10 @@ app.get('/api/users', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
+  });
 
 // Helper to run queries with async/await and send errors properly
-=======
+
 // Helper for queries
 
 async function runQuery(res, query, params = []) {
