@@ -3,11 +3,178 @@ const cors = require('cors');
 const db = require('./db'); // promise-based pool
 const app = express();
 const PORT = 3000;
+const { Composio } = require("@composio/client");
+const crypto = require("crypto");
+const fetch = require("node-fetch");
 
 app.use(cors());
 app.use(express.json());
 
+
+//TASKS
+/*
+1 - Upon adding  a new user, send unique activation link
+2- when user clicks on activation link, let him set new password and activate account
+
+*/
+// Activation route
+app.post("/api/activate", (req, res) => {
+  const { token, password } = req.body;
+
+  db.query(
+    "SELECT user_id, expires_at FROM user_activation WHERE token = ?",
+    [token],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
+
+      const { user_id, expires_at } = results[0];
+      if (new Date() > expires_at) {
+        return res.status(400).json({ error: "Token expired" });
+      }
+
+      // Update user password + activate
+      db.query(
+        "UPDATE user SET password = ?, status = 1 WHERE id = ?",
+        [password, user_id],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: "Failed to update user" });
+
+          // Remove used token
+          db.query("DELETE FROM user_activation WHERE token = ?", [token]);
+
+          res.json({ success: true });
+        }
+      );
+    }
+  );
+});
+
+// LOGIN ROUTE (no bcrypt, plain text check)
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: "Email and password are required" });
+  }
+
+  db.query("SELECT * FROM user WHERE email = ?", [email], (err, results) => {
+    if (err) {
+      console.error("❌ Login DB Error:", err);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    const user = results[0];
+
+    // Check if account is activated
+    if (user.status !== 1) {
+      return res.status(403).json({ success: false, error: "Account not activated" });
+    }
+
+    // Compare passwords directly
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+
+    // ✅ Login successful
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  });
+});
+
+app.post("/api/user", (req, res) => {
+  const { firstName, lastName, emailAddress, address, role } = req.body;
+
+  const dummyPassword = "temporary"; // hash later for security
+
+  // 1. Insert user with dummy password and inactive status
+  db.query(
+    "INSERT INTO user (first_name, last_name, email, address, role, password, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [firstName, lastName, emailAddress, address, role, dummyPassword, 0],
+    (err, result) => {
+      if (err) {
+        console.error("❌ DB Insert Error:", err);
+        return res.status(500).json({ success: false, error: "Database insert failed" });
+      }
+
+      const userId = result.insertId;
+
+      // 2. Generate activation token
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // 3. Insert token into user_activation
+      db.query(
+        "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
+        [userId, token, expiresAt],
+        (err2) => {
+          if (err2) {
+            console.error("❌ Token Insert Error:", err2);
+            return res.status(500).json({ success: false, error: "Token insert failed" });
+          }
+
+          // 4. Build activation link
+          const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+
+          // 5. Send activation email
+          fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
+            method: "POST",
+            headers: {
+              "x-api-key": process.env.COMPOSIO_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
+              user_id: "email", // replace with your connected Gmail
+            }),
+          })
+            .then((r) => r.json())
+            .then((emailResult) => {
+              res.json({
+                success: true,
+                firstName,
+                emailSent: emailResult.success || !emailResult.error,
+              });
+            })
+            .catch((err3) => {
+              console.error("❌ Email Error:", err3);
+              res.json({ success: true, firstName, emailSent: false });
+            });
+        }
+      );
+    }
+  );
+});
+
+// Users route (all active users)
+app.get('/api/users', (req, res) => {
+  const query = `
+    SELECT id, first_name, last_name, role 
+    FROM user 
+    WHERE status = 1
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+
+// Helper to run queries with async/await and send errors properly
+=======
 // Helper for queries
+
 async function runQuery(res, query, params = []) {
   try {
     const [results] = await db.query(query, params);
@@ -18,25 +185,6 @@ async function runQuery(res, query, params = []) {
     return null;
   }
 }
-
-// POST /api/user
-app.post('/api/user', async (req, res) => {
-  const { firstName, lastName, emailAddress, address, role } = req.body;
-  const sql = `INSERT INTO user (first_name, last_name, email, address, status, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-  try {
-    const [result] = await db.query(sql, [firstName, lastName, emailAddress, address, 0, "aasdsasdaa", role]);
-    res.json({ id: result.insertId, firstName });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/users
-app.get('/api/users', async (req, res) => {
-  const query = `SELECT id, first_name, last_name, role FROM user WHERE status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
-});
 
 // GET /api/students
 app.get('/api/students', async (req, res) => {
