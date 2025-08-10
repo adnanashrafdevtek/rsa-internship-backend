@@ -10,6 +10,16 @@ import fetch from "node-fetch";
 app.use(cors());
 app.use(express.json());
 
+async function setTimeZone() {
+  try {
+    await db.query("SET time_zone = '-06:00'");
+    console.log('MySQL timezone set to CST');
+  } catch (err) {
+    console.error('Failed to set timezone:', err);
+  }
+}
+
+setTimeZone();
 
 //TASKS
 /*
@@ -367,6 +377,53 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   } catch (err) {
     console.error('Error removing student from class:', err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/teachers/:id/classes', async (req, res) => {
+  const teacherId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
+       FROM class c
+       WHERE c.teacher_id = ?`,
+      [teacherId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching teacher classes' });
+  }
+});
+
+
+app.get('/api/students/:id/classes', async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
+       FROM class c
+       JOIN student_class sc ON sc.class_id = c.id
+       WHERE sc.user_id = ?`,
+      [studentId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching student classes' });
+  }
+});
+
+app.get('/myCalendar', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const [rows] = await db.query(
+      `SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id
+       FROM calendar
+       WHERE user_id = ?`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching calendar events' });
   }
 });
 
