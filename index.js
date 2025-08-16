@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import db from './db.js'; // promise-based pool
@@ -73,6 +74,42 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.error("❌ Login DB Error:", err);
     return res.status(500).json({ success: false, error: "Database error" });
+  }
+});
+
+// POST /api/calendar — add a new calendar event
+app.post('/api/calendar', async (req, res) => {
+  // Accept 'title' and 'description' from the request and map to DB columns
+  const { title, start_time, end_time, class_id, user_id, description } = req.body;
+  const event_title = title;
+  if (!event_title || !start_time || !end_time || !user_id) {
+    return res.status(400).json({ error: 'title, start_time, end_time, and user_id are required' });
+  }
+  try {
+    const [result] = await db.query(
+      'INSERT INTO calendar (event_title, start_time, end_time, class_id, user_id, description) VALUES (?, ?, ?, ?, ?, ?)',
+      [event_title, start_time, end_time, class_id || null, user_id, description || null]
+    );
+    res.status(201).json({ idcalendar: result.insertId, event_title, start_time, end_time, class_id, user_id, description });
+  } catch (err) {
+    res.status(500).json({ error: 'DB error adding calendar event' });
+  }
+});
+
+// DELETE /api/calendar/:id — delete a calendar event by idcalendar
+app.delete('/api/calendar/:id', async (req, res) => {
+  const idcalendar = parseInt(req.params.id);
+  if (!idcalendar) {
+    return res.status(400).json({ error: 'Invalid calendar event id' });
+  }
+  try {
+    const [result] = await db.query('DELETE FROM calendar WHERE idcalendar = ?', [idcalendar]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Calendar event not found' });
+    }
+    res.json({ message: `Calendar event ${idcalendar} deleted successfully` });
+  } catch (err) {
+    res.status(500).json({ error: 'DB error deleting calendar event' });
   }
 });
 
@@ -370,6 +407,51 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   }
 });
 
+app.get('/api/teachers/:id/classes', async (req, res) => {
+  const teacherId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
+       FROM class c
+       WHERE c.teacher_id = ?`,
+      [teacherId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching teacher classes' });
+  }
+});
+
+
+app.get('/api/students/:id/classes', async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
+       FROM class c
+       JOIN student_class sc ON sc.class_id = c.id
+       WHERE sc.user_id = ?`,
+      [studentId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching student classes' });
+  }
+});
+
+app.get('/myCalendar', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const [rows] = await db.query(
+      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description FROM calendar WHERE user_id = ?',
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Calendar Fetch Error:", err);
+    res.status(500).json({ error: 'DB error fetching calendar events' });
+  }
+});
 
 
 // (Other calendar routes unchanged)
