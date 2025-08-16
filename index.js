@@ -1,11 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import db from './db.js'; // promise-based pool
+const express = require('express');
+const cors = require('cors');
+const db = require('./db'); // promise-based pool
 const app = express();
 const PORT = 3000;
-import { Composio } from "@composio/client";
-import crypto from "crypto";
-import fetch from "node-fetch";
+const { Composio } = require("@composio/client");
+const crypto = require("crypto");
+const fetch = require("node-fetch");
 
 app.use(cors());
 app.use(express.json());
@@ -377,38 +377,12 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-// src/api/api.js
-import axios from "axios";
 
-/* =====================
-   TEACHER APIs
-===================== */
-// Get teacher's classes & schedule
-export const getTeacherSchedule = (teacherId) =>
-  axios.get(`/api/teachers/${teacherId}/classes`);
-
-/* =====================
-   CLASSROOM APIs
-===================== */
-// Add a new classroom location
-export const addClassroomLocation = (locationData) =>
-  axios.post("/api/classrooms", locationData);
-
-// Get all classroom locations
-export const getClassroomLocations = () =>
-  axios.get("/api/classrooms");
-
-/* =====================
-   CLASS APIs
-===================== */
-// Add a student to a class
-export const addStudentToClass = (classId, studentId) =>
-  axios.post(`/api/classes/${classId}/students`, { studentId });
-
-/* =====================
-   CALENDAR APIs
-===================== */
-// Add a calendar event (supports recurring)
-export const addCalendarEvent = (eventData) =>
-  axios.post("/api/calendar/events", eventData);
+module.exports = {
+  getTeacherSchedule: (teacherId) => axios.get(`/api/teachers/${teacherId}/classes`),
+  addClassroomLocation: (locationData) => axios.post("/api/classrooms", locationData),
+  getClassroomLocations: () => axios.get("/api/classrooms"),
+  addStudentToClass: (classId, studentId) => axios.post(`/api/classes/${classId}/students`, { studentId }),
+  addCalendarEvent: (eventData) => axios.post("/api/calendar/events", eventData)
+};
 
