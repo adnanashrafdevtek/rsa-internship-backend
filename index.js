@@ -1,15 +1,21 @@
 
+
+console.log('Starting server: loading modules...');
 import express from 'express';
 import cors from 'cors';
 import db from './db.js'; // promise-based pool
+console.log('Modules loaded. Initializing app...');
 const app = express();
 const PORT = 3000;
 import { Composio } from "@composio/client";
 import crypto from "crypto";
 import fetch from "node-fetch";
+console.log('App initialized. Setting up middleware...');
+
 
 app.use(cors());
 app.use(express.json());
+console.log('Middleware set up. Registering routes...');
 
 
 //TASKS
@@ -456,6 +462,7 @@ app.get('/myCalendar', async (req, res) => {
 
 // (Other calendar routes unchanged)
 
+console.log('Routes registered. Starting server...');
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
