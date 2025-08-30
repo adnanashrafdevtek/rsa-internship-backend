@@ -1,23 +1,19 @@
-
+console.log('Starting server: loading modules...');
 import express from 'express';
 import cors from 'cors';
 import db from './db.js'; // promise-based pool
+console.log('Modules loaded. Initializing app...');
 const app = express();
 const PORT = 3000;
 import { Composio } from "@composio/client";
 import crypto from "crypto";
 import fetch from "node-fetch";
+console.log('App initialized. Setting up middleware...');
 
 app.use(cors());
 app.use(express.json());
+console.log('Middleware set up. Registering routes...');
 
-
-//TASKS
-/*
-1 - Upon adding  a new user, send unique activation link
-2- when user clicks on activation link, let him set new password and activate account
-
-*/
 // Activation route
 app.post("/api/activate", async (req, res) => {
   const { token, password } = req.body;
@@ -79,7 +75,6 @@ app.post("/login", async (req, res) => {
 
 // POST /api/calendar — add a new calendar event
 app.post('/api/calendar', async (req, res) => {
-  // Accept 'title' and 'description' from the request and map to DB columns
   const { title, start_time, end_time, class_id, user_id, description } = req.body;
   const event_title = title;
   if (!event_title || !start_time || !end_time || !user_id) {
@@ -174,7 +169,6 @@ app.get('/api/users', async (req, res) => {
 });
 
 // Helper for queries
-
 async function runQuery(res, query, params = []) {
   try {
     const [results] = await db.query(query, params);
@@ -186,18 +180,41 @@ async function runQuery(res, query, params = []) {
   }
 }
 
-// GET /api/students
-app.get('/api/students', async (req, res) => {
-  const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'student' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+// TEACHER: Get all classes taught by this teacher, with full info
+app.get('/api/teachers/:id/classes', async (req, res) => {
+  const teacherId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.grade_level, c.start_time, c.end_time, c.recurring_days,
+              u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
+         FROM class c
+         LEFT JOIN user u ON c.teacher_id = u.id
+         WHERE c.teacher_id = ?`,
+      [teacherId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching teacher classes' });
+  }
 });
 
-// GET /api/teachers
-app.get('/api/teachers', async (req, res) => {
-  const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'teacher' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+// STUDENT: Get all classes this student is enrolled in, with full info
+app.get('/api/students/:id/classes', async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      `SELECT c.id, c.name, c.grade_level, c.start_time, c.end_time, c.recurring_days,
+              u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
+         FROM class c
+         LEFT JOIN user u ON c.teacher_id = u.id
+         JOIN student_class sc ON sc.class_id = c.id
+         WHERE sc.user_id = ?`,
+      [studentId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'DB error fetching student classes' });
+  }
 });
 
 // GET /api/classes
@@ -275,7 +292,7 @@ app.get('/api/classes/:id', async (req, res) => {
   }
 });
 
-// **NEW** GET /api/classes/:id/students — return students for a class
+// GET /api/classes/:id/students — return students for a class
 app.get('/api/classes/:id/students', async (req, res) => {
   const classId = parseInt(req.params.id);
   if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
@@ -332,7 +349,7 @@ app.delete('/api/classes/:id', async (req, res) => {
   }
 });
 
-// ✅ NEW: Get students by grade level
+// Get students by grade level
 app.get('/api/students/grade/:gradeLevel', async (req, res) => {
   const gradeLevel = req.params.gradeLevel;
   try {
@@ -346,11 +363,27 @@ app.get('/api/students/grade/:gradeLevel', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch students by grade' });
   }
 });
+// Get all teachers
+app.get('/api/teachers', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT id, first_name, last_name FROM user WHERE role = "teacher" AND status = 1');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teachers' });
+  }
+});
 
+// Get all students
+app.get('/api/students', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT id, first_name, last_name, grade_level FROM user WHERE role = "student" AND status = 1');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
+});
 
-// ✅ POST /api/classes/:classId/students — add student to class
-// ... your existing requires, app setup, etc.
-
+// POST /api/classes/:classId/students — add student to class
 app.post('/api/classes/:classId/students', async (req, res) => {
   const classId = parseInt(req.params.classId);
   const { student_id } = req.body;
@@ -381,7 +414,7 @@ app.post('/api/classes/:classId/students', async (req, res) => {
   }
 });
 
-// ... your other routes and app.listen
+// DELETE /api/classes/:classId/students/:studentId — remove student from class
 app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   const classId = parseInt(req.params.classId);
   const studentId = parseInt(req.params.studentId);
@@ -407,38 +440,6 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   }
 });
 
-app.get('/api/teachers/:id/classes', async (req, res) => {
-  const teacherId = req.params.id;
-  try {
-    const [rows] = await db.query(
-      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
-       FROM class c
-       WHERE c.teacher_id = ?`,
-      [teacherId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'DB error fetching teacher classes' });
-  }
-});
-
-
-app.get('/api/students/:id/classes', async (req, res) => {
-  const studentId = req.params.id;
-  try {
-    const [rows] = await db.query(
-      `SELECT c.id, c.name, c.start_time, c.end_time, c.recurring_days
-       FROM class c
-       JOIN student_class sc ON sc.class_id = c.id
-       WHERE sc.user_id = ?`,
-      [studentId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'DB error fetching student classes' });
-  }
-});
-
 app.get('/myCalendar', async (req, res) => {
   const { userId } = req.query;
   try {
@@ -453,44 +454,7 @@ app.get('/myCalendar', async (req, res) => {
   }
 });
 
-
-// (Other calendar routes unchanged)
-
+console.log('Routes registered. Starting server...');
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-// src/api/api.js
-import axios from "axios";
-
-/* =====================
-   TEACHER APIs
-===================== */
-// Get teacher's classes & schedule
-export const getTeacherSchedule = (teacherId) =>
-  axios.get(`/api/teachers/${teacherId}/classes`);
-
-/* =====================
-   CLASSROOM APIs
-===================== */
-// Add a new classroom location
-export const addClassroomLocation = (locationData) =>
-  axios.post("/api/classrooms", locationData);
-
-// Get all classroom locations
-export const getClassroomLocations = () =>
-  axios.get("/api/classrooms");
-
-/* =====================
-   CLASS APIs
-===================== */
-// Add a student to a class
-export const addStudentToClass = (classId, studentId) =>
-  axios.post(`/api/classes/${classId}/students`, { studentId });
-
-/* =====================
-   CALENDAR APIs
-===================== */
-// Add a calendar event (supports recurring)
-export const addCalendarEvent = (eventData) =>
-  axios.post("/api/calendar/events", eventData);
-

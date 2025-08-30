@@ -11,10 +11,10 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\index.js",
+"program": "${workspaceFolder}/index.js",
             "env":{"DB_HOST":"localhost",
             "DB_USER":"root",
-            "DB_PASS":"",
+            "DB_PASSWORD":"",
             "DB_NAME":"rsa_scheduler"
             
         }
