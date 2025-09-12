@@ -18,6 +18,30 @@ app.use(express.json());
 
 */
 // Activation route
+// Activation route
+app.post("/api/availability", async (req, res) => {
+  const { user_id, events } = req.body;
+
+  if (!user_id || !events || events.length === 0) {
+    return res.status(400).json({ error: "Missing user_id or events" });
+  }
+
+  try {
+    for (const event of events) {
+      await db.query(
+        "INSERT INTO calendar (start_time, end_time, event_title, user_id, class_id) VALUES (?, ?, ?, ?, ?)",
+        [event.start, event.end, event.title, user_id, 0] // class_id=0 since it's just availability
+      );
+    }
+
+    res.json({ success: true, message: "Availability saved" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Activation route
 app.post("/api/activate", async (req, res) => {
   const { token, password } = req.body;
   try {
@@ -26,16 +50,26 @@ app.post("/api/activate", async (req, res) => {
       [token]
     );
     if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
+
     const { user_id, expires_at } = results[0];
     if (new Date() > expires_at) {
       return res.status(400).json({ error: "Token expired" });
     }
+
     await db.query(
       "UPDATE user SET password = ?, status = 1 WHERE id = ?",
       [password, user_id]
     );
+
+    // Get the user's role after activation
+    const [userResults] = await db.query(
+      "SELECT role FROM user WHERE id = ?",
+      [user_id]
+    );
+
     await db.query("DELETE FROM user_activation WHERE token = ?", [token]);
-    res.json({ success: true });
+
+    res.json({ success: true, user_id, role: userResults[0].role.toUpperCase() }); // return role uppercase
   } catch (err) {
     res.status(500).json({ error: err.message || "DB error" });
   }
