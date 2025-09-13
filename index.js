@@ -19,22 +19,63 @@ app.use(express.json());
 */
 // Activation route
 // Activation route
-app.post("/api/availability", async (req, res) => {
-  const { user_id, events } = req.body;
+// Get a teacher's availability
+app.get("/api/teacher-availability/:teacherId", async (req, res) => {
+  const teacherId = parseInt(req.params.teacherId);
+  if (!teacherId) return res.status(400).json({ error: "Invalid teacher ID" });
 
-  if (!user_id || !events || events.length === 0) {
-    return res.status(400).json({ error: "Missing user_id or events" });
+  try {
+    const [results] = await db.query(
+      "SELECT id, start_time AS start, end_time AS end FROM teacher_availability WHERE teacher_id = ?",
+      [teacherId]
+    );
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Save/update availability
+// Save/update availability
+app.post("/api/teacher-availability", async (req, res) => {
+  const { teacher_id, events } = req.body;
+  if (!teacher_id || !events || !events.length) {
+    return res.status(400).json({ error: "Missing teacher_id or events" });
   }
 
   try {
-    for (const event of events) {
+    // Prepare MySQL-friendly datetime strings
+    const formattedEvents = events.map((e) => {
+      const start = new Date(e.start);
+      const end = new Date(e.end);
+
+      const mysqlStart = `${start.getFullYear()}-${(start.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${start.getDate().toString().padStart(2, "0")} ${start
+        .getHours()
+        .toString()
+        .padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")}:00`;
+
+      const mysqlEnd = `${end.getFullYear()}-${(end.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${end.getDate().toString().padStart(2, "0")} ${end
+        .getHours()
+        .toString()
+        .padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}:00`;
+
+      return { start: mysqlStart, end: mysqlEnd };
+    });
+
+    // Insert new availability
+    for (const event of formattedEvents) {
       await db.query(
-        "INSERT INTO calendar (start_time, end_time, event_title, user_id, class_id) VALUES (?, ?, ?, ?, ?)",
-        [event.start, event.end, event.title, user_id, 0] // class_id=0 since it's just availability
+        "INSERT INTO teacher_availability (teacher_id, start_time, end_time) VALUES (?, ?, ?)",
+        [teacher_id, event.start, event.end]
       );
     }
 
-    res.json({ success: true, message: "Availability saved" });
+    res.json({ success: true, message: "Availability saved!" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });

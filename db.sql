@@ -128,6 +128,14 @@ CREATE TABLE user_activation (
   expires_at DATETIME NOT NULL,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 );
+CREATE TABLE teacher_availability (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
+);
 
 --
 -- Dumping data for table `user`
