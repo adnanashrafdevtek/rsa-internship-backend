@@ -110,7 +110,7 @@ app.post("/api/activate", async (req, res) => {
 
     await db.query("DELETE FROM user_activation WHERE token = ?", [token]);
 
-    res.json({ success: true, user_id, role: userResults[0].role.toUpperCase() }); // return role uppercase
+    res.json({ success: true, user_id, role: userResults[0].role.toLowerCase() }); // return role uppercase
   } catch (err) {
     res.status(500).json({ error: err.message || "DB error" });
   }
