@@ -26,7 +26,20 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
 
   try {
     const [results] = await db.query(
-      "SELECT id, start_time AS start, end_time AS end FROM teacher_availability WHERE teacher_id = ?",
+      `SELECT 
+        ta.id,
+        ta.teacher_id,
+        u.first_name AS teacher_first_name,
+        u.last_name AS teacher_last_name,
+        ta.day_of_week,
+        ta.start_time,
+        ta.end_time,
+        ta.valid_from,
+        ta.valid_to,
+        ta.created_at
+      FROM teacher_availability ta
+      LEFT JOIN user u ON ta.teacher_id = u.id
+      WHERE ta.teacher_id = ?`,
       [teacherId]
     );
     res.json(results);
@@ -445,9 +458,60 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   }
 });
 
+// Get all teacher availabilities (for scheduling)
+app.get("/api/teacher-availabilities", async (req, res) => {
+  try {
+    const [results] = await db.query(
+      `SELECT 
+        ta.id,
+        ta.teacher_id,
+        u.first_name AS teacher_first_name,
+        u.last_name AS teacher_last_name,
+        ta.day_of_week,
+        ta.start_time,
+        ta.end_time,
+        ta.valid_from,
+        ta.valid_to,
+        ta.created_at
+      FROM teacher_availability ta
+      LEFT JOIN user u ON ta.teacher_id = u.id`
+    );
+    res.json(results);
+  } catch (err) {
+    console.error("Error fetching teacher availabilities:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
+// Get all availabilities for a specific teacher (for scheduling)
+app.get("/api/teacher-availabilities/:teacherId", async (req, res) => {
+  const teacherId = parseInt(req.params.teacherId);
+  if (!teacherId) return res.status(400).json({ error: "Invalid teacher ID" });
 
-// (Other calendar routes unchanged)
+  try {
+    const [results] = await db.query(
+      `SELECT 
+        ta.id,
+        ta.teacher_id,
+        u.first_name AS teacher_first_name,
+        u.last_name AS teacher_last_name,
+        ta.day_of_week,
+        ta.start_time,
+        ta.end_time,
+        ta.valid_from,
+        ta.valid_to,
+        ta.created_at
+      FROM teacher_availability ta
+      LEFT JOIN user u ON ta.teacher_id = u.id
+      WHERE ta.teacher_id = ?`,
+      [teacherId]
+    );
+    res.json(results);
+  } catch (err) {
+    console.error("Error fetching teacher availabilities:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
