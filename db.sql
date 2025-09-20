@@ -136,6 +136,14 @@ CREATE TABLE teacher_availability (
     FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
 );
 
+-- Example: Insert data into teacher_availability table
+INSERT INTO teacher_availability
+  (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to, created_at)
+VALUES
+  (2, 1, '08:00:00', '12:00:00', '2024-06-01', '2024-12-31', NOW()),
+  (2, 3, '09:30:00', '15:00:00', '2024-06-01', '2024-12-31', NOW()),
+  (2, 5, '07:45:00', '11:30:00', '2024-06-01', '2024-12-31', NOW());
+
 --
 -- Dumping data for table `user`
 --
