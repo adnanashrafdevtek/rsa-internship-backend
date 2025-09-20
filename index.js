@@ -20,6 +20,7 @@ app.use(express.json());
 // Activation route
 // Activation route
 // Get a teacher's availability
+// GET teacher availability
 app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   const teacherId = parseInt(req.params.teacherId);
   if (!teacherId) return res.status(400).json({ error: "Invalid teacher ID" });
@@ -42,9 +43,16 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
       WHERE ta.teacher_id = ?`,
       [teacherId]
     );
-    res.json(results);
+
+    // Always add title for frontend display
+    const events = results.map(r => ({
+      ...r,
+      title: "Available"
+    }));
+
+    res.json(events);
   } catch (err) {
-    console.error(err);
+    console.error("DB error:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -123,7 +131,7 @@ app.post("/api/activate", async (req, res) => {
 
     await db.query("DELETE FROM user_activation WHERE token = ?", [token]);
 
-    res.json({ success: true, user_id, role: userResults[0].role.toUpperCase() }); // return role uppercase
+    res.json({ success: true, user_id, role: userResults[0].role.toLowerCase() }); // return role uppercase
   } catch (err) {
     res.status(500).json({ error: err.message || "DB error" });
   }
@@ -545,4 +553,3 @@ module.exports = {
   addStudentToClass: (classId, studentId) => axios.post(`/api/classes/${classId}/students`, { studentId }),
   addCalendarEvent: (eventData) => axios.post("/api/calendar/events", eventData)
 };
-
