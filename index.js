@@ -9,8 +9,14 @@ const fetch = require("node-fetch");
 
 app.use(cors());
 app.use(express.json());
-console.log('Middleware set up. Registering routes...');
 
+
+//TASKS
+/*
+1 - Upon adding  a new user, send unique activation link
+2- when user clicks on activation link, let him set new password and activate account
+
+*/
 // Activation route
 // Activation route
 // Get a teacher's availability
@@ -158,41 +164,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// POST /api/calendar — add a new calendar event
-app.post('/api/calendar', async (req, res) => {
-  const { title, start_time, end_time, class_id, user_id, description } = req.body;
-  const event_title = title;
-  if (!event_title || !start_time || !end_time || !user_id) {
-    return res.status(400).json({ error: 'title, start_time, end_time, and user_id are required' });
-  }
-  try {
-    const [result] = await db.query(
-      'INSERT INTO calendar (event_title, start_time, end_time, class_id, user_id, description) VALUES (?, ?, ?, ?, ?, ?)',
-      [event_title, start_time, end_time, class_id || null, user_id, description || null]
-    );
-    res.status(201).json({ idcalendar: result.insertId, event_title, start_time, end_time, class_id, user_id, description });
-  } catch (err) {
-    res.status(500).json({ error: 'DB error adding calendar event' });
-  }
-});
-
-// DELETE /api/calendar/:id — delete a calendar event by idcalendar
-app.delete('/api/calendar/:id', async (req, res) => {
-  const idcalendar = parseInt(req.params.id);
-  if (!idcalendar) {
-    return res.status(400).json({ error: 'Invalid calendar event id' });
-  }
-  try {
-    const [result] = await db.query('DELETE FROM calendar WHERE idcalendar = ?', [idcalendar]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Calendar event not found' });
-    }
-    res.json({ message: `Calendar event ${idcalendar} deleted successfully` });
-  } catch (err) {
-    res.status(500).json({ error: 'DB error deleting calendar event' });
-  }
-});
-
 app.post("/api/user", async (req, res) => {
   const { firstName, lastName, emailAddress, address, role } = req.body;
   const dummyPassword = "temporary"; // hash later for security
@@ -254,6 +225,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 // Helper for queries
+
 async function runQuery(res, query, params = []) {
   try {
     const [results] = await db.query(query, params);
@@ -265,41 +237,18 @@ async function runQuery(res, query, params = []) {
   }
 }
 
-// TEACHER: Get all classes taught by this teacher, with full info
-app.get('/api/teachers/:id/classes', async (req, res) => {
-  const teacherId = req.params.id;
-  try {
-    const [rows] = await db.query(
-      `SELECT c.id, c.name, c.grade_level, c.start_time, c.end_time, c.recurring_days,
-              u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
-         FROM class c
-         LEFT JOIN user u ON c.teacher_id = u.id
-         WHERE c.teacher_id = ?`,
-      [teacherId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'DB error fetching teacher classes' });
-  }
+// GET /api/students
+app.get('/api/students', async (req, res) => {
+  const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'student' AND status = 1`;
+  const results = await runQuery(res, query);
+  if (results) res.json(results);
 });
 
-// STUDENT: Get all classes this student is enrolled in, with full info
-app.get('/api/students/:id/classes', async (req, res) => {
-  const studentId = req.params.id;
-  try {
-    const [rows] = await db.query(
-      `SELECT c.id, c.name, c.grade_level, c.start_time, c.end_time, c.recurring_days,
-              u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
-         FROM class c
-         LEFT JOIN user u ON c.teacher_id = u.id
-         JOIN student_class sc ON sc.class_id = c.id
-         WHERE sc.user_id = ?`,
-      [studentId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'DB error fetching student classes' });
-  }
+// GET /api/teachers
+app.get('/api/teachers', async (req, res) => {
+  const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'teacher' AND status = 1`;
+  const results = await runQuery(res, query);
+  if (results) res.json(results);
 });
 
 // GET /api/classes
@@ -377,7 +326,7 @@ app.get('/api/classes/:id', async (req, res) => {
   }
 });
 
-// GET /api/classes/:id/students — return students for a class
+// **NEW** GET /api/classes/:id/students — return students for a class
 app.get('/api/classes/:id/students', async (req, res) => {
   const classId = parseInt(req.params.id);
   if (!classId) return res.status(400).json({ error: 'Invalid class ID' });
@@ -434,7 +383,7 @@ app.delete('/api/classes/:id', async (req, res) => {
   }
 });
 
-// Get students by grade level
+// ✅ NEW: Get students by grade level
 app.get('/api/students/grade/:gradeLevel', async (req, res) => {
   const gradeLevel = req.params.gradeLevel;
   try {
@@ -448,27 +397,11 @@ app.get('/api/students/grade/:gradeLevel', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch students by grade' });
   }
 });
-// Get all teachers
-app.get('/api/teachers', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT id, first_name, last_name FROM user WHERE role = "teacher" AND status = 1');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch teachers' });
-  }
-});
 
-// Get all students
-app.get('/api/students', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT id, first_name, last_name, grade_level FROM user WHERE role = "student" AND status = 1');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch students' });
-  }
-});
 
-// POST /api/classes/:classId/students — add student to class
+// ✅ POST /api/classes/:classId/students — add student to class
+// ... your existing requires, app setup, etc.
+
 app.post('/api/classes/:classId/students', async (req, res) => {
   const classId = parseInt(req.params.classId);
   const { student_id } = req.body;
@@ -499,7 +432,7 @@ app.post('/api/classes/:classId/students', async (req, res) => {
   }
 });
 
-// DELETE /api/classes/:classId/students/:studentId — remove student from class
+// ... your other routes and app.listen
 app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
   const classId = parseInt(req.params.classId);
   const studentId = parseInt(req.params.studentId);
@@ -592,22 +525,3 @@ module.exports = {
   addCalendarEvent: (eventData) => axios.post("/api/calendar/events", eventData)
 };
 
-
-app.get('/myCalendar', async (req, res) => {
-  const { userId } = req.query;
-  try {
-    const [rows] = await db.query(
-      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description FROM calendar WHERE user_id = ?',
-      [userId]
-    );
-    res.json(rows);
-  } catch (err) {
-    console.error("Calendar Fetch Error:", err);
-    res.status(500).json({ error: 'DB error fetching calendar events' });
-  }
-});
-
-console.log('Routes registered. Starting server...');
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
