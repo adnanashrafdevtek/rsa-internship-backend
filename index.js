@@ -397,6 +397,27 @@ app.get('/api/students/grade/:gradeLevel', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch students by grade' });
   }
 });
+// GET /api/calendar — return all calendar events for master schedule
+app.get('/api/calendar', async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description FROM calendar'
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Calendar Fetch Error:", err);
+    res.status(500).json({ error: 'DB error fetching calendar events' });
+  }
+});
+// Get all teachers
+app.get('/api/teachers', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT id, first_name, last_name FROM user WHERE role = "teacher" AND status = 1');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teachers' });
+  }
+});
 
 
 // ✅ POST /api/classes/:classId/students — add student to class
