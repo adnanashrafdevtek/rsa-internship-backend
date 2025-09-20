@@ -20,6 +20,7 @@ app.use(express.json());
 // Activation route
 // Activation route
 // Get a teacher's availability
+// GET teacher availability
 app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   const teacherId = parseInt(req.params.teacherId);
   if (!teacherId) return res.status(400).json({ error: "Invalid teacher ID" });
@@ -29,9 +30,16 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
       "SELECT id, start_time AS start, end_time AS end FROM teacher_availability WHERE teacher_id = ?",
       [teacherId]
     );
-    res.json(results);
+
+    // Always add title for frontend display
+    const events = results.map(r => ({
+      ...r,
+      title: "Available"
+    }));
+
+    res.json(events);
   } catch (err) {
-    console.error(err);
+    console.error("DB error:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
