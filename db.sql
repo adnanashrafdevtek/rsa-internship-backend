@@ -78,6 +78,7 @@ UNLOCK TABLES;
 --
 -- Table structure for table `student_class`
 --
+DELETE FROM `rsa_scheduler`.`user` WHERE (`id` = '7');
 
 DROP TABLE IF EXISTS `student_class`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -122,6 +123,26 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS teacher_availability;
+CREATE TABLE teacher_availability (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    day_of_week TINYINT NOT NULL, -- 0=Sunday, 6=Saturday
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    valid_from DATE DEFAULT NULL, -- optional: when this slot starts being valid
+    valid_to DATE DEFAULT NULL,   -- optional: when this slot ends being valid
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
+);
+
+-- Example: Insert data into teacher_availability table
+INSERT INTO teacher_availability
+  (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to, created_at)
+VALUES
+  (2, 1, '08:00:00', '12:00:00', '2024-06-01', '2024-12-31', NOW()),
+  (2, 3, '09:30:00', '15:00:00', '2024-06-01', '2024-12-31', NOW()),
+  (2, 5, '07:45:00', '11:30:00', '2024-06-01', '2024-12-31', NOW());
 
 --
 -- Dumping data for table `user`
