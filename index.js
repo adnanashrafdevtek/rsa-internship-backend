@@ -21,6 +21,7 @@ app.use(express.json());
 // Activation route
 // Get a teacher's availability
 // GET teacher availability
+// GET a teacher's availability
 app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   const teacherId = parseInt(req.params.teacherId);
   if (!teacherId) return res.status(400).json({ error: "Invalid teacher ID" });
@@ -28,26 +29,29 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   try {
     const [results] = await db.query(
       `SELECT 
-        ta.id,
-        ta.teacher_id,
-        u.first_name AS teacher_first_name,
-        u.last_name AS teacher_last_name,
-        ta.day_of_week,
-        ta.start_time,
-        ta.end_time,
-        ta.valid_from,
-        ta.valid_to,
-        ta.created_at
-      FROM teacher_availability ta
-      LEFT JOIN user u ON ta.teacher_id = u.id
-      WHERE ta.teacher_id = ?`,
+        id,
+        teacher_id,
+        day_of_week,
+        start_time,
+        end_time,
+        valid_from,
+        valid_to,
+        created_at
+      FROM teacher_availability
+      WHERE teacher_id = ?`,
       [teacherId]
     );
 
-    // Always add title for frontend display
+    // Map to frontend-friendly events
     const events = results.map(r => ({
-      ...r,
-      title: "Available"
+      id: r.id,
+      teacher_id: r.teacher_id,
+      title: "Available",
+      day_of_week: r.day_of_week,
+      start_time: r.start_time,
+      end_time: r.end_time,
+      valid_from: r.valid_from,
+      valid_to: r.valid_to,
     }));
 
     res.json(events);
@@ -57,8 +61,8 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   }
 });
 
-// Save/update availability
-// Save/update availability
+// POST save/update teacher availability
+// POST save/update teacher availability
 app.post("/api/teacher-availability", async (req, res) => {
   const { teacher_id, events } = req.body;
   if (!teacher_id || !events || !events.length) {
@@ -66,39 +70,36 @@ app.post("/api/teacher-availability", async (req, res) => {
   }
 
   try {
-    // Prepare MySQL-friendly datetime strings
-    const formattedEvents = events.map((e) => {
-      const start = new Date(e.start);
-      const end = new Date(e.end);
+    // Clear old slots for this teacher
+    await db.query("DELETE FROM teacher_availability WHERE teacher_id = ?", [teacher_id]);
 
-      const mysqlStart = `${start.getFullYear()}-${(start.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}-${start.getDate().toString().padStart(2, "0")} ${start
-        .getHours()
-        .toString()
-        .padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")}:00`;
+    for (const e of events) {
+      const startDate = new Date(e.start);
+      const endDate = new Date(e.end);
 
-      const mysqlEnd = `${end.getFullYear()}-${(end.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}-${end.getDate().toString().padStart(2, "0")} ${end
-        .getHours()
-        .toString()
-        .padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}:00`;
+      const dayOfWeek = startDate.getDay(); // 0 = Sunday, 6 = Saturday
 
-      return { start: mysqlStart, end: mysqlEnd };
-    });
+      const startTime = startDate.toTimeString().split(" ")[0]; // "HH:MM:SS"
+      const endTime = endDate.toTimeString().split(" ")[0];
 
-    // Insert new availability
-    for (const event of formattedEvents) {
       await db.query(
-        "INSERT INTO teacher_availability (teacher_id, start_time, end_time) VALUES (?, ?, ?)",
-        [teacher_id, event.start, event.end]
+        `INSERT INTO teacher_availability 
+         (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          teacher_id,
+          dayOfWeek,
+          startTime,
+          endTime,
+          startDate.toISOString().slice(0, 10), // YYYY-MM-DD
+          endDate.toISOString().slice(0, 10),   // YYYY-MM-DD
+        ]
       );
     }
 
     res.json({ success: true, message: "Availability saved!" });
   } catch (err) {
-    console.error(err);
+    console.error("❌ DB error:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
