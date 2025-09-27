@@ -147,6 +147,293 @@ VALUES
 --
 -- Dumping data for table `user`
 --
+-- seed_teachers.sql
+-- Day-of-week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+
+-- Optional if your session needs it:
+-- USE rsa_scheduler;
+
+START TRANSACTION;
+
+SET @valid_from = '2025-09-01';
+SET @valid_to   = '2025-12-31';
+
+-- 1) Insert teachers if they don't already exist (by email)
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Emma', 'Hall', 'emma.hall@rsa.edu', '123 Oak St', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='emma.hall@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Liam', 'Patel', 'liam.patel@rsa.edu', '34 Pine Ave', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='liam.patel@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Wei', 'Li', 'wei.li@rsa.edu', '56 Maple Rd', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='wei.li@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Maria', 'Garcia', 'maria.garcia@rsa.edu', '78 Cedar St', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='maria.garcia@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'James', 'Smith', 'james.smith@rsa.edu', '90 Birch Blvd', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='james.smith@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Fatima', 'Khan', 'fatima.khan@rsa.edu', '12 Cherry Ln', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='fatima.khan@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Diego', 'Fernandez', 'diego.fernandez@rsa.edu', '23 Willow Way', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='diego.fernandez@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Sara', 'Ali', 'sara.ali@rsa.edu', '45 Spruce Ct', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='sara.ali@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Andrew', 'Choi', 'andrew.choi@rsa.edu', '67 Elm Sq', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='andrew.choi@rsa.edu');
+
+INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
+SELECT 'Nina', 'Ivanov', 'nina.ivanov@rsa.edu', '89 Poplar Dr', 'teacher', 'changeme', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='nina.ivanov@rsa.edu');
+
+-- 2) Availability inserts (idempotent)
+-- Helper macro: insert only if an exact row doesn't already exist
+-- (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+
+-- Emma Hall (Mon 08-11, Wed 13-16)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 1, '08:00:00', '11:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='emma.hall@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
+    AND ta.start_time='08:00:00' AND ta.end_time='11:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 3, '13:00:00', '16:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='emma.hall@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
+    AND ta.start_time='13:00:00' AND ta.end_time='16:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Liam Patel (Tue 09-12, Thu 14-17)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 2, '09:00:00', '12:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='liam.patel@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
+    AND ta.start_time='09:00:00' AND ta.end_time='12:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 4, '14:00:00', '17:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='liam.patel@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
+    AND ta.start_time='14:00:00' AND ta.end_time='17:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Wei Li (Mon 10-12:30, Fri 09-11)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 1, '10:00:00', '12:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='wei.li@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
+    AND ta.start_time='10:00:00' AND ta.end_time='12:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 5, '09:00:00', '11:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='wei.li@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
+    AND ta.start_time='09:00:00' AND ta.end_time='11:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Maria Garcia (Tue 08:30-11:30, Thu 09-12)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 2, '08:30:00', '11:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='maria.garcia@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
+    AND ta.start_time='08:30:00' AND ta.end_time='11:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 4, '09:00:00', '12:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='maria.garcia@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
+    AND ta.start_time='09:00:00' AND ta.end_time='12:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- James Smith (Wed 08-12, Fri 13-16)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 3, '08:00:00', '12:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='james.smith@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
+    AND ta.start_time='08:00:00' AND ta.end_time='12:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 5, '13:00:00', '16:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='james.smith@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
+    AND ta.start_time='13:00:00' AND ta.end_time='16:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Fatima Khan (Mon 07:45-11:45, Thu 12:30-15:30)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 1, '07:45:00', '11:45:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='fatima.khan@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
+    AND ta.start_time='07:45:00' AND ta.end_time='11:45:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 4, '12:30:00', '15:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='fatima.khan@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
+    AND ta.start_time='12:30:00' AND ta.end_time='15:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Diego Fernandez (Tue 10-13, Fri 08-10:30)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 2, '10:00:00', '13:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='diego.fernandez@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
+    AND ta.start_time='10:00:00' AND ta.end_time='13:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 5, '08:00:00', '10:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='diego.fernandez@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
+    AND ta.start_time='08:00:00' AND ta.end_time='10:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Sara Ali (Wed 09:30-12:30, Fri 10-13)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 3, '09:30:00', '12:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='sara.ali@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
+    AND ta.start_time='09:30:00' AND ta.end_time='12:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 5, '10:00:00', '13:00:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='sara.ali@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
+    AND ta.start_time='10:00:00' AND ta.end_time='13:00:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Andrew Choi (Mon 08:30-11:30, Thu 14:30-17:30)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 1, '08:30:00', '11:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='andrew.choi@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
+    AND ta.start_time='08:30:00' AND ta.end_time='11:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 4, '14:30:00', '17:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='andrew.choi@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
+    AND ta.start_time='14:30:00' AND ta.end_time='17:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+-- Nina Ivanov (Tue 11-13:30, Thu 09:30-12:30)
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 2, '11:00:00', '13:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='nina.ivanov@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
+    AND ta.start_time='11:00:00' AND ta.end_time='13:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
+SELECT u.id, 4, '09:30:00', '12:30:00', @valid_from, @valid_to
+FROM `user` u
+WHERE u.email='nina.ivanov@rsa.edu'
+AND NOT EXISTS (
+  SELECT 1 FROM teacher_availability ta
+  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
+    AND ta.start_time='09:30:00' AND ta.end_time='12:30:00'
+    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
+);
+
+COMMIT;
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
