@@ -404,7 +404,7 @@ app.get('/api/students/grade/:gradeLevel', async (req, res) => {
 app.get('/api/calendar', async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description FROM calendar'
+      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description, room FROM calendar'
     );
     res.json(rows);
   } catch (err) {
@@ -536,12 +536,13 @@ app.post('/api/schedules', async (req, res) => {
       class_id, 
       event_title, 
       user_id, 
-      description 
+      description,
+      room
     } = req.body;
 
     const query = `
-      INSERT INTO calendar (start_time, end_time, class_id, event_title, user_id, description)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO calendar (start_time, end_time, class_id, event_title, user_id, description, room)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     
     const [result] = await db.query(query, [
@@ -550,7 +551,8 @@ app.post('/api/schedules', async (req, res) => {
       class_id, 
       event_title, 
       user_id, 
-      description
+      description,
+      room
     ]);
     
     res.json({ 
@@ -613,12 +615,13 @@ app.put('/api/schedules/:id', async (req, res) => {
       class_id, 
       event_title, 
       user_id, 
-      description 
+      description,
+      room
     } = req.body;
 
     const query = `
       UPDATE calendar 
-      SET start_time = ?, end_time = ?, class_id = ?, event_title = ?, user_id = ?, description = ?
+      SET start_time = ?, end_time = ?, class_id = ?, event_title = ?, user_id = ?, description = ?, room = ?
       WHERE idcalendar = ?
     `;
     
@@ -628,7 +631,8 @@ app.put('/api/schedules/:id', async (req, res) => {
       class_id, 
       event_title, 
       user_id, 
-      description, 
+      description,
+      room,
       id
     ]);
     
