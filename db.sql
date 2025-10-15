@@ -30,8 +30,9 @@ CREATE TABLE `calendar` (
   `event_title` varchar(255) DEFAULT NULL,
   `user_id` int DEFAULT NULL,
   `description` text,
+  `room` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
-) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +41,7 @@ CREATE TABLE `calendar` (
 
 LOCK TABLES `calendar` WRITE;
 /*!40000 ALTER TABLE `calendar` DISABLE KEYS */;
-INSERT INTO `calendar` VALUES (58,'2025-07-18 01:30:00','2025-07-18 05:30:00',1,'1',2,NULL),(59,'2025-07-16 10:00:00','2025-07-16 11:00:00',2,'2',4,NULL),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2,NULL),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',6,'6',4,NULL),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL,NULL),(66,'2025-07-29 00:30:00','2025-07-29 05:30:00',1,'Science',NULL,NULL),(70,'2025-08-01 08:11:00','2025-08-02 09:12:00',NULL,'IEEEEe',2,'NMAMAMMAMAMMAMMAMAMA'),(86,'2025-08-26 22:09:00','2025-08-26 23:09:00',NULL,'DEIJDIEgeuyikusjlkaf',5,'description');
+INSERT INTO `calendar` VALUES (59,'2025-07-16 10:00:00','2025-07-16 11:00:00',2,'2',4,NULL,'Gym'),(61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2,NULL,'102'),(64,'2025-07-14 01:30:00','2025-07-14 05:00:00',6,'6',4,NULL,'101'),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL,NULL,'103'),(66,'2025-07-29 00:30:00','2025-07-29 05:30:00',1,'Science',NULL,NULL,'Library'),(70,'2025-08-01 08:11:00','2025-08-02 09:12:00',NULL,'IEEEEe',2,'NMAMAMMAMAMMAMMAMAMA','201'),(86,'2025-08-26 22:09:00','2025-08-26 23:09:00',NULL,'DEIJDIEgeuyikusjlkaf',5,'description',NULL),(91,'2025-10-03 08:10:00','2025-10-03 10:40:00',NULL,'Math - Grade 5 - Room 103',2,'Subject: Math, Grade: 5, Room: 103, Teacher: ali ahmed, A/B Day: A, Recurring: Fri',NULL),(99,'2025-09-29 08:20:00','2025-09-29 10:00:00',NULL,'English - Grade 3 - Room 1301',7,'Subject: English, Grade: 3, Room: 1301, Teacher: Emma Hall, A/B Day: A, Recurring: Mon',NULL),(100,'2025-10-15 09:55:00','2025-10-15 11:10:00',NULL,'Math - Grade 7 - Room 103',14,'Subject: Math, Grade: 7, Room: 103, Teacher: Sara Ali, A/B Day: A, Recurring: Wed',NULL),(101,'2025-10-15 09:00:00','2025-10-15 10:00:00',11,'Math Class',4,'Algebra lesson',NULL),(102,'2025-10-17 08:20:00','2025-10-17 09:50:00',NULL,'Math - Grade 4 - Room 607',2,'Subject: Math, Grade: 4, Room: 607, Teacher: ali ahmed, A/B Day: A, Recurring: Fri',NULL);
 /*!40000 ALTER TABLE `calendar` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -78,7 +79,6 @@ UNLOCK TABLES;
 --
 -- Table structure for table `student_class`
 --
-DELETE FROM `rsa_scheduler`.`user` WHERE (`id` = '7');
 
 DROP TABLE IF EXISTS `student_class`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -104,6 +104,38 @@ INSERT INTO `student_class` VALUES (3,11),(5,11),(3,12),(5,12);
 UNLOCK TABLES;
 
 --
+-- Table structure for table `teacher_availability`
+--
+
+DROP TABLE IF EXISTS `teacher_availability`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `teacher_availability` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `teacher_id` int NOT NULL,
+  `day_of_week` tinyint NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `valid_from` date DEFAULT NULL,
+  `valid_to` date DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `teacher_id` (`teacher_id`),
+  CONSTRAINT `teacher_availability_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `teacher_availability`
+--
+
+LOCK TABLES `teacher_availability` WRITE;
+/*!40000 ALTER TABLE `teacher_availability` DISABLE KEYS */;
+INSERT INTO `teacher_availability` VALUES (1,2,1,'08:00:00','12:00:00','2024-06-01','2024-12-31','2025-09-27 14:30:19'),(2,2,3,'09:30:00','15:00:00','2024-06-01','2024-12-31','2025-09-27 14:30:19'),(3,2,5,'07:45:00','11:30:00','2024-06-01','2024-12-31','2025-09-27 14:30:19'),(4,7,1,'08:00:00','11:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(5,7,3,'13:00:00','16:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(6,8,2,'09:00:00','12:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(7,8,4,'14:00:00','17:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(8,9,1,'10:00:00','12:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(9,9,5,'09:00:00','11:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(10,10,2,'08:30:00','11:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(11,10,4,'09:00:00','12:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(12,11,3,'08:00:00','12:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(13,11,5,'13:00:00','16:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(14,12,1,'07:45:00','11:45:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(15,12,4,'12:30:00','15:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(16,13,2,'10:00:00','13:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(17,13,5,'08:00:00','10:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(18,14,3,'09:30:00','12:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(19,14,5,'10:00:00','13:00:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(20,15,1,'08:30:00','11:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(21,15,4,'14:30:00','17:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(22,16,2,'11:00:00','13:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19'),(23,16,4,'09:30:00','12:30:00','2025-09-01','2025-12-31','2025-09-27 14:30:19');
+/*!40000 ALTER TABLE `teacher_availability` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user`
 --
 
@@ -121,324 +153,43 @@ CREATE TABLE `user` (
   `status` tinyint NOT NULL DEFAULT '1',
   `grade_level` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS teacher_availability;
-CREATE TABLE teacher_availability (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    teacher_id INT NOT NULL,
-    day_of_week TINYINT NOT NULL, -- 0=Sunday, 6=Saturday
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    valid_from DATE DEFAULT NULL, -- optional: when this slot starts being valid
-    valid_to DATE DEFAULT NULL,   -- optional: when this slot ends being valid
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
-);
-
--- Example: Insert data into teacher_availability table
-INSERT INTO teacher_availability
-  (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to, created_at)
-VALUES
-  (2, 1, '08:00:00', '12:00:00', '2024-06-01', '2024-12-31', NOW()),
-  (2, 3, '09:30:00', '15:00:00', '2024-06-01', '2024-12-31', NOW()),
-  (2, 5, '07:45:00', '11:30:00', '2024-06-01', '2024-12-31', NOW());
 
 --
 -- Dumping data for table `user`
 --
--- seed_teachers.sql
--- Day-of-week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-
--- Optional if your session needs it:
--- USE rsa_scheduler;
-
-START TRANSACTION;
-
-SET @valid_from = '2025-09-01';
-SET @valid_to   = '2025-12-31';
-
--- 1) Insert teachers if they don't already exist (by email)
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Emma', 'Hall', 'emma.hall@rsa.edu', '123 Oak St', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='emma.hall@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Liam', 'Patel', 'liam.patel@rsa.edu', '34 Pine Ave', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='liam.patel@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Wei', 'Li', 'wei.li@rsa.edu', '56 Maple Rd', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='wei.li@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Maria', 'Garcia', 'maria.garcia@rsa.edu', '78 Cedar St', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='maria.garcia@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'James', 'Smith', 'james.smith@rsa.edu', '90 Birch Blvd', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='james.smith@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Fatima', 'Khan', 'fatima.khan@rsa.edu', '12 Cherry Ln', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='fatima.khan@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Diego', 'Fernandez', 'diego.fernandez@rsa.edu', '23 Willow Way', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='diego.fernandez@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Sara', 'Ali', 'sara.ali@rsa.edu', '45 Spruce Ct', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='sara.ali@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Andrew', 'Choi', 'andrew.choi@rsa.edu', '67 Elm Sq', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='andrew.choi@rsa.edu');
-
-INSERT INTO `user` (first_name, last_name, email, address, role, password, status, grade_level)
-SELECT 'Nina', 'Ivanov', 'nina.ivanov@rsa.edu', '89 Poplar Dr', 'teacher', 'changeme', 1, NULL
-WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE email='nina.ivanov@rsa.edu');
-
--- 2) Availability inserts (idempotent)
--- Helper macro: insert only if an exact row doesn't already exist
--- (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-
--- Emma Hall (Mon 08-11, Wed 13-16)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 1, '08:00:00', '11:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='emma.hall@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
-    AND ta.start_time='08:00:00' AND ta.end_time='11:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 3, '13:00:00', '16:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='emma.hall@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
-    AND ta.start_time='13:00:00' AND ta.end_time='16:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Liam Patel (Tue 09-12, Thu 14-17)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 2, '09:00:00', '12:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='liam.patel@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
-    AND ta.start_time='09:00:00' AND ta.end_time='12:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 4, '14:00:00', '17:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='liam.patel@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
-    AND ta.start_time='14:00:00' AND ta.end_time='17:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Wei Li (Mon 10-12:30, Fri 09-11)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 1, '10:00:00', '12:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='wei.li@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
-    AND ta.start_time='10:00:00' AND ta.end_time='12:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 5, '09:00:00', '11:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='wei.li@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
-    AND ta.start_time='09:00:00' AND ta.end_time='11:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Maria Garcia (Tue 08:30-11:30, Thu 09-12)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 2, '08:30:00', '11:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='maria.garcia@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
-    AND ta.start_time='08:30:00' AND ta.end_time='11:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 4, '09:00:00', '12:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='maria.garcia@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
-    AND ta.start_time='09:00:00' AND ta.end_time='12:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- James Smith (Wed 08-12, Fri 13-16)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 3, '08:00:00', '12:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='james.smith@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
-    AND ta.start_time='08:00:00' AND ta.end_time='12:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 5, '13:00:00', '16:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='james.smith@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
-    AND ta.start_time='13:00:00' AND ta.end_time='16:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Fatima Khan (Mon 07:45-11:45, Thu 12:30-15:30)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 1, '07:45:00', '11:45:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='fatima.khan@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
-    AND ta.start_time='07:45:00' AND ta.end_time='11:45:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 4, '12:30:00', '15:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='fatima.khan@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
-    AND ta.start_time='12:30:00' AND ta.end_time='15:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Diego Fernandez (Tue 10-13, Fri 08-10:30)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 2, '10:00:00', '13:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='diego.fernandez@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
-    AND ta.start_time='10:00:00' AND ta.end_time='13:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 5, '08:00:00', '10:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='diego.fernandez@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
-    AND ta.start_time='08:00:00' AND ta.end_time='10:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Sara Ali (Wed 09:30-12:30, Fri 10-13)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 3, '09:30:00', '12:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='sara.ali@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=3
-    AND ta.start_time='09:30:00' AND ta.end_time='12:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 5, '10:00:00', '13:00:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='sara.ali@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=5
-    AND ta.start_time='10:00:00' AND ta.end_time='13:00:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Andrew Choi (Mon 08:30-11:30, Thu 14:30-17:30)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 1, '08:30:00', '11:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='andrew.choi@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=1
-    AND ta.start_time='08:30:00' AND ta.end_time='11:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 4, '14:30:00', '17:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='andrew.choi@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
-    AND ta.start_time='14:30:00' AND ta.end_time='17:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
--- Nina Ivanov (Tue 11-13:30, Thu 09:30-12:30)
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 2, '11:00:00', '13:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='nina.ivanov@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=2
-    AND ta.start_time='11:00:00' AND ta.end_time='13:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-INSERT INTO teacher_availability (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to)
-SELECT u.id, 4, '09:30:00', '12:30:00', @valid_from, @valid_to
-FROM `user` u
-WHERE u.email='nina.ivanov@rsa.edu'
-AND NOT EXISTS (
-  SELECT 1 FROM teacher_availability ta
-  WHERE ta.teacher_id=u.id AND ta.day_of_week=4
-    AND ta.start_time='09:30:00' AND ta.end_time='12:30:00'
-    AND ta.valid_from=@valid_from AND ta.valid_to=@valid_to
-);
-
-COMMIT;
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','admin','test',1,NULL),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','teacher','test123',1,NULL),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','student','12345',1,'10'),(4,'said','musa','said.musa@gmail.com','ahahah','teacher','00000',1,NULL),(5,'HARUN ','person','HARUN.person@gmail.com','student','student','uuuuuuu',1,'12');
+INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','admin','test',1,NULL),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','teacher','test123',1,NULL),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','student','12345',1,'10'),(4,'said','musa','said.musa@gmail.com','ahahah','teacher','00000',1,NULL),(5,'HARUN ','person','HARUN.person@gmail.com','student','student','uuuuuuu',1,'12'),(7,'Emma','Hall','emma.hall@rsa.edu','123 Oak St','teacher','changeme',1,NULL),(8,'Liam','Patel','liam.patel@rsa.edu','34 Pine Ave','teacher','changeme',1,NULL),(9,'Wei','Li','wei.li@rsa.edu','56 Maple Rd','teacher','changeme',1,NULL),(10,'Maria','Garcia','maria.garcia@rsa.edu','78 Cedar St','teacher','changeme',1,NULL),(11,'James','Smith','james.smith@rsa.edu','90 Birch Blvd','teacher','changeme',1,NULL),(12,'Fatima','Khan','fatima.khan@rsa.edu','12 Cherry Ln','teacher','changeme',1,NULL),(13,'Diego','Fernandez','diego.fernandez@rsa.edu','23 Willow Way','teacher','changeme',1,NULL),(14,'Sara','Ali','sara.ali@rsa.edu','45 Spruce Ct','teacher','changeme',1,NULL),(15,'Andrew','Choi','andrew.choi@rsa.edu','67 Elm Sq','teacher','changeme',1,NULL),(16,'Nina','Ivanov','nina.ivanov@rsa.edu','89 Poplar Dr','teacher','changeme',1,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_activation`
+--
+
+DROP TABLE IF EXISTS `user_activation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_activation` (
+  `user_id` int NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `token` (`token`),
+  CONSTRAINT `user_activation_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_activation`
+--
+
+LOCK TABLES `user_activation` WRITE;
+/*!40000 ALTER TABLE `user_activation` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_activation` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -450,4 +201,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-28 10:47:53
+-- Dump completed on 2025-10-15 16:35:00
