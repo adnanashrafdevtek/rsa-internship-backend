@@ -31,6 +31,8 @@ CREATE TABLE `calendar` (
   `user_id` int DEFAULT NULL,
   `description` text,
   `room` varchar(255) DEFAULT NULL,
+  `grade` varchar(10) DEFAULT NULL,
+  `subject` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
 ) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
