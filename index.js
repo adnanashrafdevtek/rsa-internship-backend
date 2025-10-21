@@ -400,6 +400,95 @@ app.get('/api/students/grade/:gradeLevel', async (req, res) => {
   }
 });
 
+// GET /api/students/:studentId/classes — Get all classes for a specific student
+app.get('/api/students/:studentId/classes', async (req, res) => {
+  const studentId = parseInt(req.params.studentId);
+  
+  if (!studentId || isNaN(studentId)) {
+    return res.status(400).json({ error: 'Invalid student ID' });
+  }
+
+  try {
+    const query = `
+      SELECT 
+        c.id,
+        c.name,
+        c.name AS subject,
+        c.grade_level,
+        c.start_time,
+        c.end_time,
+        c.recurring_days,
+        c.teacher_id,
+        CONCAT(u.first_name, ' ', u.last_name) AS teacher_name,
+        u.first_name AS teacher_first_name,
+        u.last_name AS teacher_last_name
+      FROM student_class sc
+      INNER JOIN class c ON sc.class_id = c.id
+      LEFT JOIN user u ON c.teacher_id = u.id
+      WHERE sc.user_id = ?
+      ORDER BY c.name
+    `;
+    
+    const [classes] = await db.query(query, [studentId]);
+    
+    // Transform recurring_days from string to array of numbers
+    const formattedClasses = classes.map(cls => {
+      let recurringDaysArray = [];
+      if (cls.recurring_days) {
+        // Parse recurring_days string (e.g., "Mon,Wed,Fri" or "Monday,Wednesday,Friday")
+        const dayMap = {
+          'mon': 0, 'monday': 0,
+          'tue': 1, 'tuesday': 1,
+          'wed': 2, 'wednesday': 2,
+          'thu': 3, 'thursday': 3,
+          'fri': 4, 'friday': 4,
+          'sat': 5, 'saturday': 5,
+          'sun': 6, 'sunday': 6
+        };
+        
+        const days = cls.recurring_days.toLowerCase().split(',').map(d => d.trim());
+        recurringDaysArray = days
+          .map(day => dayMap[day])
+          .filter(num => num !== undefined);
+      }
+      
+      // Format time from datetime to HH:MM:SS
+      let startTime = null;
+      let endTime = null;
+      
+      if (cls.start_time) {
+        const startDate = new Date(cls.start_time);
+        startTime = startDate.toTimeString().split(' ')[0];
+      }
+      
+      if (cls.end_time) {
+        const endDate = new Date(cls.end_time);
+        endTime = endDate.toTimeString().split(' ')[0];
+      }
+      
+      return {
+        id: cls.id,
+        name: cls.name,
+        subject: cls.subject,
+        grade_level: cls.grade_level,
+        start_time: startTime,
+        end_time: endTime,
+        recurring_days: recurringDaysArray,
+        teacher_id: cls.teacher_id,
+        teacher_name: cls.teacher_name,
+        teacher_first_name: cls.teacher_first_name,
+        teacher_last_name: cls.teacher_last_name,
+        room: null
+      };
+    });
+    
+    res.json(formattedClasses);
+  } catch (error) {
+    console.error('Error fetching student classes:', error);
+    res.status(500).json({ error: 'Failed to fetch student classes', details: error.message });
+  }
+});
+
 // GET /api/calendar — return all calendar events for master schedule
 app.get('/api/calendar', async (req, res) => {
   try {
