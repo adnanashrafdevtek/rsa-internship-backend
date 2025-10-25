@@ -489,6 +489,47 @@ app.get('/api/students/:studentId/classes', async (req, res) => {
   }
 });
 
+// GET /api/teachers/:teacherId/classes — Get classes for a specific teacher
+app.get('/api/teachers/:teacherId/classes', async (req, res) => {
+  const teacherId = parseInt(req.params.teacherId);
+  if (!teacherId) return res.status(400).json({ error: 'Invalid teacher ID' });
+
+  const query = `
+    SELECT 
+      c.id,
+      c.name,
+      c.grade_level,
+      c.start_time,
+      c.end_time,
+      c.recurring_days,
+      c.teacher_id,
+      u.first_name AS teacher_first_name,
+      u.last_name AS teacher_last_name
+    FROM class c
+    LEFT JOIN user u ON c.teacher_id = u.id
+    WHERE c.teacher_id = ?
+  `;
+
+  try {
+    const [results] = await db.query(query, [teacherId]);
+    const formatted = results.map(row => ({
+      id: row.id,
+      name: row.name,
+      grade_level: row.grade_level,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      recurring_days: row.recurring_days,
+      teacher_id: row.teacher_id,
+      teacher_first_name: row.teacher_first_name,
+      teacher_last_name: row.teacher_last_name,
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error('Error in GET /api/teachers/:teacherId/classes:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // GET /api/calendar — return all calendar events for master schedule
 app.get('/api/calendar', async (req, res) => {
   try {
