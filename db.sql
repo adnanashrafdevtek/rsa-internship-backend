@@ -138,6 +138,36 @@ INSERT INTO `teacher_availability` VALUES (1,2,1,'08:00:00','12:00:00','2024-06-
 UNLOCK TABLES;
 
 --
+-- Table structure for table `teacher_grades`
+--
+
+DROP TABLE IF EXISTS `teacher_grades`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `teacher_grades` (
+  `teacher_id` int NOT NULL,
+  `grade_level` varchar(10) NOT NULL,
+  PRIMARY KEY (`teacher_id`,`grade_level`),
+  CONSTRAINT `fk_teacher_grades_user` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `teacher_grades`
+--
+
+LOCK TABLES `teacher_grades` WRITE;
+/*!40000 ALTER TABLE `teacher_grades` DISABLE KEYS */;
+INSERT INTO `teacher_grades` (`teacher_id`,`grade_level`) VALUES
+  (2,'10'),
+  (4,'10'),
+  (7,'3'),
+  (7,'4'),
+  (8,'5');
+/*!40000 ALTER TABLE `teacher_grades` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user`
 --
 

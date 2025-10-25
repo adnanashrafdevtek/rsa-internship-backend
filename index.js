@@ -15,7 +15,12 @@ app.use(express.json());
 1 - Upon adding  a new user, send unique activation link
 2- when user clicks on activation link, let him set new password and activate account
 */
-
+// Add to your Express app
+app.get('/api/teacher-grades', async (req, res) => {
+  // Use your DB connection here
+  const [rows] = await db.query('SELECT teacher_id, grade_level FROM teacher_grades');
+  res.json(rows);
+});
 // GET teacher availability
 app.get("/api/teacher-availability/:teacherId", async (req, res) => {
   const teacherId = parseInt(req.params.teacherId);
@@ -191,7 +196,7 @@ app.post("/api/user", async (req, res) => {
       },
       body: JSON.stringify({
         text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
-        user_id: "email", // replace with your connected Gmail
+        user_id: "pg-test-b310aa29-6b6e-4c6f-b225-dbad2e20f602", // replace with your connected Gmail
       }),
     })
       .then((r) => r.json())
