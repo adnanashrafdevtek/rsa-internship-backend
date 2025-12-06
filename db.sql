@@ -154,6 +154,25 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` VALUES (1,'bob','adam','bob.adam@gmail.com','100 mian street','admin','test',1,NULL),(2,'ali','ahmed','ali.ahmed@gmail.com','test street','teacher','test123',1,NULL),(3,'mahdi','musab','mahdi.musab@gmail.com','678 street','student','12345',1,'10'),(5,'HARUN ','person','HARUN.person@gmail.com','student','student','uuuuuuu',1,'12'),(7,'Emma','Hall','emma.hall@rsa.edu','123 Oak St','teacher','changeme',1,NULL),(8,'Liam','Patel','liam.patel@rsa.edu','34 Pine Ave','teacher','changeme',1,NULL),(9,'Wei','Li','wei.li@rsa.edu','56 Maple Rd','teacher','changeme',1,NULL),(10,'Maria','Garcia','maria.garcia@rsa.edu','78 Cedar St','teacher','changeme',1,NULL),(11,'James','Smith','james.smith@rsa.edu','90 Birch Blvd','teacher','changeme',1,NULL),(12,'Fatima','Khan','fatima.khan@rsa.edu','12 Cherry Ln','teacher','changeme',1,NULL),(13,'Diego','Fernandez','diego.fernandez@rsa.edu','23 Willow Way','teacher','changeme',1,NULL),(14,'Sara','Ali','sara.ali@rsa.edu','45 Spruce Ct','teacher','changeme',1,NULL),(15,'Andrew','Choi','andrew.choi@rsa.edu','67 Elm Sq','teacher','changeme',1,NULL),(16,'Nina','Ivanov','nina.ivanov@rsa.edu','89 Poplar Dr','teacher','changeme',1,NULL);
+-- Teacher ID 7
+INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES
+('Math', '9', 7, '2025-11-25 06:30:00', '2025-11-25 08:00:00', 'Mon,Tue,Wed,Thu,Fri'),
+('Science', '10', 7, '2025-11-25 08:15:00', '2025-11-25 09:45:00', 'Mon,Tue,Wed,Thu,Fri');
+
+-- Teacher ID 8
+INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES
+('History', '11', 8, '2025-11-25 09:50:00', '2025-11-25 11:20:00', 'Mon,Tue,Wed,Thu,Fri'),
+('English', '12', 8, '2025-11-25 11:30:00', '2025-11-25 13:00:00', 'Mon,Tue,Wed,Thu,Fri');
+
+-- Teacher ID 9
+INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES
+('Physics', '10', 9, '2025-11-25 06:30:00', '2025-11-25 08:00:00', 'Mon,Tue,Wed,Thu,Fri'),
+('Chemistry', '11', 9, '2025-11-25 08:15:00', '2025-11-25 09:45:00', 'Mon,Tue,Wed,Thu,Fri');
+
+-- Teacher ID 10
+INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES
+('Art', '9', 10, '2025-11-25 12:00:00', '2025-11-25 13:30:00', 'Mon,Tue,Wed,Thu,Fri'),
+('Music', '10', 10, '2025-11-25 13:45:00', '2025-11-25 15:15:00', 'Mon,Tue,Wed,Thu,Fri');
 
 --
 -- Table structure for table `user_activation`
