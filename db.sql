@@ -49,6 +49,11 @@ CREATE TABLE `calendar` (
 --
 
 INSERT INTO `calendar` VALUES (61,'2025-07-16 01:00:00','2025-07-16 06:30:00',3,'3',2,NULL,'102',NULL,NULL),(65,'2025-07-25 09:15:00','2025-07-25 11:45:00',9,'Muhammad Hussein',NULL,NULL,'103',NULL,NULL),(66,'2025-07-29 00:30:00','2025-07-29 05:30:00',1,'Science',NULL,NULL,'Library',NULL,NULL),(70,'2025-08-01 08:11:00','2025-08-02 09:12:00',NULL,'IEEEEe',2,'NMAMAMMAMAMMAMMAMAMA','201',NULL,NULL),(86,'2025-08-26 22:09:00','2025-08-26 23:09:00',NULL,'DEIJDIEgeuyikusjlkaf',5,'description',NULL,NULL,NULL),(91,'2025-10-03 08:10:00','2025-10-03 10:40:00',NULL,'Math - Grade 5 - Room 103',2,'Subject: Math, Grade: 5, Room: 103, Teacher: ali ahmed, A/B Day: A, Recurring: Fri',NULL,'5','Math'),(99,'2025-09-29 08:20:00','2025-09-29 10:00:00',NULL,'English - Grade 3 - Room 1301',7,'Subject: English, Grade: 3, Room: 1301, Teacher: Emma Hall, A/B Day: A, Recurring: Mon',NULL,'3','English'),(100,'2025-10-15 09:55:00','2025-10-15 11:10:00',NULL,'Math - Grade 7 - Room 103',14,'Subject: Math, Grade: 7, Room: 103, Teacher: Sara Ali, A/B Day: A, Recurring: Wed',NULL,'7','Math'),(102,'2025-10-17 08:20:00','2025-10-17 09:50:00',NULL,'Math - Grade 4 - Room 607',2,'Subject: Math, Grade: 4, Room: 607, Teacher: ali ahmed, A/B Day: A, Recurring: Fri',NULL,'4','Math');
+-- Conflict test: user 2 and user 7 at same time/day
+INSERT INTO `calendar` (start_time, end_time, class_id, event_title, user_id, description, room, grade, subject)
+VALUES ('2025-11-25 08:15:00','2025-11-25 09:45:00', NULL, 'Conflict Test - Teacher 2', 2, 'Overlap with Teacher 7', 'Room 200', NULL, NULL);
+INSERT INTO `calendar` (start_time, end_time, class_id, event_title, user_id, description, room, grade, subject)
+VALUES ('2025-11-25 08:15:00','2025-11-25 09:45:00', NULL, 'Conflict Test - Teacher 7', 7, 'Overlap with Teacher 2', 'Room 200', NULL, NULL);
 
 --
 -- Table structure for table `class`
