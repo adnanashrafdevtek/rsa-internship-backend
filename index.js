@@ -489,6 +489,46 @@ app.get('/api/students/:studentId/classes', async (req, res) => {
   }
 });
 
+// GET /api/teachers/schedules — Get all schedules for all teachers
+app.get('/api/teachers/schedules', async (req, res) => {
+  try {
+    const query = `
+      SELECT c.*, u.first_name, u.last_name, u.role
+      FROM calendar c
+      LEFT JOIN user u ON c.user_id = u.id
+      WHERE u.role = 'teacher'
+      ORDER BY c.start_time
+    `;
+    
+    const [schedules] = await db.query(query);
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching all teacher schedules:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch all teacher schedules' });
+  }
+});
+
+// GET /api/teachers/:teacherId/schedules — Get teacher-specific schedules
+app.get('/api/teachers/:teacherId/schedules', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    const query = `
+      SELECT c.*, u.first_name, u.last_name 
+      FROM calendar c
+      LEFT JOIN user u ON c.user_id = u.id
+      WHERE c.user_id = ?
+      ORDER BY c.start_time
+    `;
+    
+    const [schedules] = await db.query(query, [teacherId]);
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching teacher schedules:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch teacher schedules' });
+  }
+});
+
 // GET /api/teachers/:teacherId/classes — Get classes for a specific teacher
 app.get('/api/teachers/:teacherId/classes', async (req, res) => {
   const teacherId = parseInt(req.params.teacherId);
@@ -715,27 +755,6 @@ app.get('/api/schedules', async (req, res) => {
   } catch (error) {
     console.error('Error fetching schedules:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch schedules' });
-  }
-});
-
-// GET /api/teachers/:teacherId/schedules — Get teacher-specific schedules
-app.get('/api/teachers/:teacherId/schedules', async (req, res) => {
-  try {
-    const { teacherId } = req.params;
-    
-    const query = `
-      SELECT c.*, u.first_name, u.last_name 
-      FROM calendar c
-      LEFT JOIN user u ON c.user_id = u.id
-      WHERE c.user_id = ?
-      ORDER BY c.start_time
-    `;
-    
-    const [schedules] = await db.query(query, [teacherId]);
-    res.json(schedules);
-  } catch (error) {
-    console.error('Error fetching teacher schedules:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch teacher schedules' });
   }
 });
 
