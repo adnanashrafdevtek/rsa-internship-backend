@@ -758,47 +758,86 @@ app.get('/api/schedules', async (req, res) => {
   }
 });
 
-// PUT /api/schedules/:id — Update a schedule
-app.put('/api/schedules/:id', async (req, res) => {
+// GET /api/schedules/:id — get a single schedule
+app.get("/api/schedules/:id", async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
-    const { 
-      start_time, 
-      end_time, 
-      class_id, 
-      event_title, 
-      user_id, 
-      description,
-      room,
-      grade,
-      subject
-    } = req.body;
+    // ensure id is treated as a number
+    const scheduleId = parseInt(id, 10);
+    if (isNaN(scheduleId)) return res.status(400).json({ error: "Invalid schedule ID" });
 
-    const query = `
-      UPDATE calendar 
-      SET start_time = ?, end_time = ?, class_id = ?, event_title = ?, user_id = ?, description = ?, room = ?, grade = ?, subject = ?
-      WHERE idcalendar = ?
-    `;
-    
-    await db.query(query, [
-      start_time, 
-      end_time, 
-      class_id, 
-      event_title, 
-      user_id, 
-      description,
-      room,
-      grade,
-      subject,
-      id
-    ]);
-    
-    res.json({ success: true, message: 'Schedule updated successfully' });
-  } catch (error) {
-    console.error('Error updating schedule:', error);
-    res.status(500).json({ success: false, message: 'Failed to update schedule' });
+    const [rows] = await db.query(
+      "SELECT * FROM calendar WHERE idcalendar = ?",
+      [scheduleId]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ error: "Schedule not found" });
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching schedule:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
+
+function isoToMySQLDatetime(isoStr) {
+  if (!isoStr) return null;
+  const d = new Date(isoStr);
+  const pad = (n) => (n < 10 ? "0" + n : n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+// PUT /api/schedules/:id — update schedule, only overwriting provided fields
+app.put("/api/schedules/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const scheduleId = parseInt(id, 10);
+    if (isNaN(scheduleId)) return res.status(400).json({ error: "Invalid schedule ID" });
+
+    const [rows] = await db.query("SELECT * FROM calendar WHERE idcalendar = ?", [scheduleId]);
+    if (rows.length === 0) return res.status(404).json({ error: "Schedule not found" });
+
+    const existing = rows[0];
+
+    // Merge provided fields and convert datetimes
+    const updated = {
+      start_time: isoToMySQLDatetime(req.body.start_time) || existing.start_time,
+      end_time: isoToMySQLDatetime(req.body.end_time) || existing.end_time,
+      class_id: req.body.class_id != null ? parseInt(req.body.class_id, 10) : existing.class_id,
+      event_title: req.body.event_title || existing.event_title,
+      user_id: req.body.user_id != null ? parseInt(req.body.user_id, 10) : existing.user_id,
+      description: req.body.description || existing.description,
+      room: req.body.room || existing.room,
+      grade: req.body.grade || existing.grade,
+      subject: req.body.subject || existing.subject,
+    };
+
+    await db.query(
+      `UPDATE calendar 
+       SET start_time=?, end_time=?, class_id=?, event_title=?, user_id=?, description=?, room=?, grade=?, subject=? 
+       WHERE idcalendar=?`,
+      [
+        updated.start_time,
+        updated.end_time,
+        updated.class_id,
+        updated.event_title,
+        updated.user_id,
+        updated.description,
+        updated.room,
+        updated.grade,
+        updated.subject,
+        scheduleId,
+      ]
+    );
+
+    res.json({ success: true, message: "Schedule updated successfully" });
+  } catch (err) {
+    console.error("Error updating schedule:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+
+
 
 // DELETE /api/schedules/:id — Delete a schedule
 app.delete('/api/schedules/:id', async (req, res) => {
