@@ -36,7 +36,7 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
       WHERE teacher_id = ?`,
       [teacherId]
     );
-
+      //testing
     // Map to frontend-friendly events
     const events = results.map(r => ({
       id: r.id,
