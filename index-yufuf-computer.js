@@ -7,7 +7,6 @@ const app = express();
 const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
-const fetch = require("node-fetch");
 
 // ✅ ADDED (JWT)
 const jwt = require("jsonwebtoken");
