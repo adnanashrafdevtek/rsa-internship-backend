@@ -40,6 +40,8 @@ CREATE TABLE `calendar` (
   `room` varchar(255) DEFAULT NULL,
   `grade` varchar(10) DEFAULT NULL,
   `subject` varchar(255) DEFAULT NULL,
+  `recurring_day` tinyint DEFAULT NULL,
+  `ab_day` char(1) DEFAULT NULL,
   PRIMARY KEY (`idcalendar`)
 ) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;

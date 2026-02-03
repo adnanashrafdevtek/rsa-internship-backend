@@ -574,7 +574,7 @@ app.get('/api/teachers/:teacherId/classes', async (req, res) => {
 app.get('/api/calendar', async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description, room, grade, subject FROM calendar'
+      'SELECT idcalendar AS id, event_title AS title, start_time, end_time, class_id, user_id, description, room, grade, subject, recurring_day, ab_day FROM calendar'
     );
     res.json(rows);
   } catch (err) {
@@ -709,12 +709,14 @@ app.post('/api/schedules', async (req, res) => {
       description,
       room,
       grade,
-      subject
+      subject,
+      recurring_day,
+      ab_day
     } = req.body;
 
     const query = `
-      INSERT INTO calendar (start_time, end_time, class_id, event_title, user_id, description, room, grade, subject)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO calendar (start_time, end_time, class_id, event_title, user_id, description, room, grade, subject, recurring_day, ab_day)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const [result] = await db.query(query, [
@@ -726,7 +728,9 @@ app.post('/api/schedules', async (req, res) => {
       description,
       room,
       grade,
-      subject
+      subject,
+      recurring_day ?? null,
+      ab_day ?? null
     ]);
     
     res.json({ 
@@ -809,11 +813,13 @@ app.put("/api/schedules/:id", async (req, res) => {
       room: req.body.room || existing.room,
       grade: req.body.grade || existing.grade,
       subject: req.body.subject || existing.subject,
+      recurring_day: req.body.recurring_day != null ? parseInt(req.body.recurring_day, 10) : existing.recurring_day,
+      ab_day: req.body.ab_day || existing.ab_day,
     };
 
     await db.query(
       `UPDATE calendar 
-       SET start_time=?, end_time=?, class_id=?, event_title=?, user_id=?, description=?, room=?, grade=?, subject=? 
+       SET start_time=?, end_time=?, class_id=?, event_title=?, user_id=?, description=?, room=?, grade=?, subject=?, recurring_day=?, ab_day=? 
        WHERE idcalendar=?`,
       [
         updated.start_time,
@@ -825,6 +831,8 @@ app.put("/api/schedules/:id", async (req, res) => {
         updated.room,
         updated.grade,
         updated.subject,
+        updated.recurring_day,
+        updated.ab_day,
         scheduleId,
       ]
     );
