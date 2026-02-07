@@ -227,30 +227,28 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Helper for queries
-async function runQuery(res, query, params = []) {
-  try {
-    const [results] = await db.query(query, params);
-    return results;
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message || 'DB error' });
-    return null;
-  }
-}
-
 // GET /api/students
 app.get('/api/students', async (req, res) => {
   const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'student' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+  try {
+    const [results] = await db.query(query);
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // GET /api/teachers
 app.get('/api/teachers', async (req, res) => {
   const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'teacher' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+  try {
+    const [results] = await db.query(query);
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // GET /api/classes
@@ -268,19 +266,23 @@ app.get('/api/classes', async (req, res) => {
     FROM class c
     LEFT JOIN user u ON c.teacher_id = u.id
   `;
-  const results = await runQuery(res, query);
-  if (!results) return;
-  const formatted = results.map(row => ({
-    id: row.id,
-    name: row.name,
-    grade_level: row.grade_level,
-    start_time: row.start_time,
-    end_time: row.end_time,
-    recurring_days: row.recurring_days,
-    teacher_first_name: row.teacher_first_name,
-    teacher_last_name: row.teacher_last_name,
-  }));
-  res.json(formatted);
+  try {
+    const [results] = await db.query(query);
+    const formatted = results.map(row => ({
+      id: row.id,
+      name: row.name,
+      grade_level: row.grade_level,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      recurring_days: row.recurring_days,
+      teacher_first_name: row.teacher_first_name,
+      teacher_last_name: row.teacher_last_name,
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // POST /api/classes
