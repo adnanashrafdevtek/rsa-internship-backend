@@ -36,7 +36,7 @@ app.get("/api/teacher-availability/:teacherId", async (req, res) => {
       WHERE teacher_id = ?`,
       [teacherId]
     );
-
+      //testing
     // Map to frontend-friendly events
     const events = results.map(r => ({
       id: r.id,
@@ -191,7 +191,7 @@ app.post("/api/user", async (req, res) => {
       },
       body: JSON.stringify({
         text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
-        user_id: "email", // replace with your connected Gmail
+        user_id: "pg-test-b310aa29-6b6e-4c6f-b225-dbad2e20f602", // replace with your connected Gmail
       }),
     })
       .then((r) => r.json())
