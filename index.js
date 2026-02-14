@@ -182,6 +182,7 @@ app.post("/api/user", async (req, res) => {
       "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
       [userId, token, expiresAt]
     );
+    console.log("api key is ", process.env.COMPOSIO_API_KEY)
     const activationLink = `http://localhost:3001/activation-form?token=${token}`;
     fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
       method: "POST",
