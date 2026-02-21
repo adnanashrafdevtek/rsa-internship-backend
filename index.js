@@ -132,7 +132,7 @@ app.post("/api/activate", async (req, res) => {
   }
 });
 
-// LOGIN ROUTE (no bcrypt, plain text check)
+// LOGIN ROUTE
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
