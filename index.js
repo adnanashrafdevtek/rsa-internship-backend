@@ -6,9 +6,14 @@ const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
+const { generateToken } = require('./utils/jwt');
+const { authMiddleware } = require('./middleware/auth');
 
 app.use(cors());
 app.use(express.json());
+
+// Apply JWT authentication middleware globally
+app.use(authMiddleware);
 
 //TASKS
 /*
@@ -150,6 +155,10 @@ app.post("/login", async (req, res) => {
     if (user.password !== password) {
       return res.status(401).json({ success: false, error: "Invalid email or password" });
     }
+    
+    // Generate JWT token
+    const token = generateToken(user);
+    
     res.json({
       success: true,
       message: "Login successful",
@@ -160,6 +169,7 @@ app.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
       },
+      token: token,
     });
   } catch (err) {
     console.error("❌ Login DB Error:", err);
@@ -816,6 +826,67 @@ app.delete('/api/schedules/:id', async (req, res) => {
     console.error('Error deleting schedule:', error);
     res.status(500).json({ success: false, message: 'Failed to delete schedule' });
   }
+});
+
+// ============================================
+// JWT/Authentication Helper Endpoints
+// ============================================
+
+// GET /api/auth/verify - Verify current JWT token and return user info
+app.get('/api/auth/verify', (req, res) => {
+  // This endpoint is protected by authMiddleware, so req.user will be populated if token is valid
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+  
+  res.json({ 
+    success: true, 
+    user: req.user,
+    message: 'Token is valid'
+  });
+});
+
+// POST /api/auth/refresh - Get a new token (regenerate token)
+app.post('/api/auth/refresh', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+
+  try {
+    // Fetch fresh user data from database
+    const [results] = await db.query("SELECT * FROM user WHERE id = ?", [req.user.id]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const user = results[0];
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      token: token,
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+      message: 'Token refreshed successfully'
+    });
+  } catch (err) {
+    console.error("❌ Token Refresh Error:", err);
+    return res.status(500).json({ success: false, error: "Failed to refresh token" });
+  }
+});
+
+// POST /api/auth/logout - Logout endpoint (client should discard token)
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Logged out successfully. Please discard your token on the client side.' 
+  });
 });
 
 // Start server
