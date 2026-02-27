@@ -6,9 +6,14 @@ const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
+const { generateToken } = require('./utils/jwt');
+const { authMiddleware } = require('./middleware/auth');
 
 app.use(cors());
 app.use(express.json());
+
+// Apply JWT authentication middleware globally
+app.use(authMiddleware);
 
 //TASKS
 /*
@@ -150,6 +155,10 @@ app.post("/login", async (req, res) => {
     if (user.password !== password) {
       return res.status(401).json({ success: false, error: "Invalid email or password" });
     }
+    
+    // Generate JWT token
+    const token = generateToken(user);
+    
     res.json({
       success: true,
       message: "Login successful",
@@ -160,6 +169,7 @@ app.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
       },
+      token: token,
     });
   } catch (err) {
     console.error("❌ Login DB Error:", err);
@@ -182,6 +192,7 @@ app.post("/api/user", async (req, res) => {
       "INSERT INTO user_activation (user_id, token, expires_at) VALUES (?, ?, ?)",
       [userId, token, expiresAt]
     );
+    console.log("api key is ", process.env.COMPOSIO_API_KEY)
     const activationLink = `http://localhost:3001/activation-form?token=${token}`;
     fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
       method: "POST",
@@ -191,7 +202,7 @@ app.post("/api/user", async (req, res) => {
       },
       body: JSON.stringify({
         text: `email ${emailAddress} with the subject "Activate your account" and the body "Hello ${firstName},\n\nPlease activate your account by clicking this link:\n${activationLink}"`,
-        user_id: "email", // replace with your connected Gmail
+        user_id: "pg-test-b310aa29-6b6e-4c6f-b225-dbad2e20f602", // replace with your connected Gmail
       }),
     })
       .then((r) => r.json())
@@ -227,30 +238,28 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Helper for queries
-async function runQuery(res, query, params = []) {
-  try {
-    const [results] = await db.query(query, params);
-    return results;
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message || 'DB error' });
-    return null;
-  }
-}
-
 // GET /api/students
 app.get('/api/students', async (req, res) => {
   const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'student' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+  try {
+    const [results] = await db.query(query);
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // GET /api/teachers
 app.get('/api/teachers', async (req, res) => {
   const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'teacher' AND status = 1`;
-  const results = await runQuery(res, query);
-  if (results) res.json(results);
+  try {
+    const [results] = await db.query(query);
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // GET /api/classes
@@ -268,19 +277,23 @@ app.get('/api/classes', async (req, res) => {
     FROM class c
     LEFT JOIN user u ON c.teacher_id = u.id
   `;
-  const results = await runQuery(res, query);
-  if (!results) return;
-  const formatted = results.map(row => ({
-    id: row.id,
-    name: row.name,
-    grade_level: row.grade_level,
-    start_time: row.start_time,
-    end_time: row.end_time,
-    recurring_days: row.recurring_days,
-    teacher_first_name: row.teacher_first_name,
-    teacher_last_name: row.teacher_last_name,
-  }));
-  res.json(formatted);
+  try {
+    const [results] = await db.query(query);
+    const formatted = results.map(row => ({
+      id: row.id,
+      name: row.name,
+      grade_level: row.grade_level,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      recurring_days: row.recurring_days,
+      teacher_first_name: row.teacher_first_name,
+      teacher_last_name: row.teacher_last_name,
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'DB error' });
+  }
 });
 
 // POST /api/classes
@@ -486,6 +499,46 @@ app.get('/api/students/:studentId/classes', async (req, res) => {
   } catch (error) {
     console.error('Error fetching student classes:', error);
     res.status(500).json({ error: 'Failed to fetch student classes', details: error.message });
+  }
+});
+
+// GET /api/teachers/schedules — Get all schedules for all teachers
+app.get('/api/teachers/schedules', async (req, res) => {
+  try {
+    const query = `
+      SELECT c.*, u.first_name, u.last_name, u.role
+      FROM calendar c
+      LEFT JOIN user u ON c.user_id = u.id
+      WHERE u.role = 'teacher'
+      ORDER BY c.start_time
+    `;
+    
+    const [schedules] = await db.query(query);
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching all teacher schedules:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch all teacher schedules' });
+  }
+});
+
+// GET /api/teachers/:teacherId/schedules — Get teacher-specific schedules
+app.get('/api/teachers/:teacherId/schedules', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    const query = `
+      SELECT c.*, u.first_name, u.last_name 
+      FROM calendar c
+      LEFT JOIN user u ON c.user_id = u.id
+      WHERE c.user_id = ?
+      ORDER BY c.start_time
+    `;
+    
+    const [schedules] = await db.query(query, [teacherId]);
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching teacher schedules:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch teacher schedules' });
   }
 });
 
@@ -718,27 +771,6 @@ app.get('/api/schedules', async (req, res) => {
   }
 });
 
-// GET /api/teachers/:teacherId/schedules — Get teacher-specific schedules
-app.get('/api/teachers/:teacherId/schedules', async (req, res) => {
-  try {
-    const { teacherId } = req.params;
-    
-    const query = `
-      SELECT c.*, u.first_name, u.last_name 
-      FROM calendar c
-      LEFT JOIN user u ON c.user_id = u.id
-      WHERE c.user_id = ?
-      ORDER BY c.start_time
-    `;
-    
-    const [schedules] = await db.query(query, [teacherId]);
-    res.json(schedules);
-  } catch (error) {
-    console.error('Error fetching teacher schedules:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch teacher schedules' });
-  }
-});
-
 // PUT /api/schedules/:id — Update a schedule
 app.put('/api/schedules/:id', async (req, res) => {
   try {
@@ -794,6 +826,67 @@ app.delete('/api/schedules/:id', async (req, res) => {
     console.error('Error deleting schedule:', error);
     res.status(500).json({ success: false, message: 'Failed to delete schedule' });
   }
+});
+
+// ============================================
+// JWT/Authentication Helper Endpoints
+// ============================================
+
+// GET /api/auth/verify - Verify current JWT token and return user info
+app.get('/api/auth/verify', (req, res) => {
+  // This endpoint is protected by authMiddleware, so req.user will be populated if token is valid
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+  
+  res.json({ 
+    success: true, 
+    user: req.user,
+    message: 'Token is valid'
+  });
+});
+
+// POST /api/auth/refresh - Get a new token (regenerate token)
+app.post('/api/auth/refresh', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Not authenticated' });
+  }
+
+  try {
+    // Fetch fresh user data from database
+    const [results] = await db.query("SELECT * FROM user WHERE id = ?", [req.user.id]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const user = results[0];
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      token: token,
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+      message: 'Token refreshed successfully'
+    });
+  } catch (err) {
+    console.error("❌ Token Refresh Error:", err);
+    return res.status(500).json({ success: false, error: "Failed to refresh token" });
+  }
+});
+
+// POST /api/auth/logout - Logout endpoint (client should discard token)
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Logged out successfully. Please discard your token on the client side.' 
+  });
 });
 
 // Start server
