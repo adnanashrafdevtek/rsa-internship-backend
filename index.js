@@ -159,6 +159,9 @@ app.post("/login", async (req, res) => {
     // Generate JWT token
     const token = generateToken(user);
     
+    // also return it in the Authorization header for clients that prefer headers
+    res.set('Authorization', `Bearer ${token}`);
+
     res.json({
       success: true,
       message: "Login successful",
