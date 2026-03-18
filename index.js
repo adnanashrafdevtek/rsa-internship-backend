@@ -222,6 +222,11 @@ app.post("/api/user", async (req, res) => {
       });
   } catch (err) {
     console.error("❌ DB Insert Error:", err);
+    // handle unique constraint violation for email
+    if (err && err.code === 'ER_DUP_ENTRY') {
+      // MySQL duplicate key error
+      return res.status(409).json({ success: false, error: "Email already exists" });
+    }
     return res.status(500).json({ success: false, error: "Database insert failed" });
   }
 });
