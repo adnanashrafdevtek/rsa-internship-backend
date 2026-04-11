@@ -1,9 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 const db = require('./db'); // promise-based pool
 const app = express();
-const PORT = process.env.PORT || process.env.port || 3000;
+const PORT = 3000;
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
