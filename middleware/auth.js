@@ -59,7 +59,9 @@ function roleMiddleware(allowedRoles) {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = typeof req.user.role === 'string' ? req.user.role.toLowerCase() : req.user.role;
+    const normalizedRoles = allowedRoles.map(role => typeof role === 'string' ? role.toLowerCase() : role);
+    if (!normalizedRoles.includes(userRole)) {
       return res.status(403).json({ 
         success: false, 
         error: 'Insufficient permissions',
