@@ -302,8 +302,15 @@ app.post('/api/classes', async (req, res) => {
   if (!name || !grade_level || !teacher_id) {
     return res.status(400).json({ error: "Name, grade_level, and teacher_id are required" });
   }
-  const sql = `INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES (?, ?, ?, ?, ?, ?)`;
+  
   try {
+    // Validate that teacher_id exists in user table
+    const [teacher] = await db.query('SELECT id FROM user WHERE id = ?', [teacher_id]);
+    if (!teacher || teacher.length === 0) {
+      return res.status(400).json({ error: "Teacher with the given teacher_id does not exist" });
+    }
+    
+    const sql = `INSERT INTO class (name, grade_level, teacher_id, start_time, end_time, recurring_days) VALUES (?, ?, ?, ?, ?, ?)`;
     const [result] = await db.query(sql, [name, grade_level, teacher_id, start_time || null, end_time || null, recurring_days || null]);
     res.json({ id: result.insertId, name, grade_level, teacher_id, start_time, end_time, recurring_days });
   } catch (err) {
