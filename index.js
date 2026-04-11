@@ -12,8 +12,14 @@ const { authMiddleware, roleMiddleware } = require('./middleware/auth');
 app.use(cors());
 app.use(express.json());
 
-// Apply JWT authentication middleware globally
-app.use(authMiddleware);
+// Apply JWT authentication middleware, but skip public routes
+const publicRoutes = ['/login', '/api/activate', '/api/user'];
+app.use((req, res, next) => {
+  if (publicRoutes.includes(req.path)) {
+    return next(); // Skip auth for public routes
+  }
+  authMiddleware(req, res, next);
+});
 
 //TASKS
 /*
@@ -285,13 +291,16 @@ app.get('/api/students', async (req, res) => {
 });
 
 // GET /api/teachers
+// GET /api/teachers
 app.get('/api/teachers', async (req, res) => {
+  console.log('🔍 Fetching teachers | User:', req.user); // Debug log
   const query = `SELECT id, first_name, last_name, role FROM user WHERE role = 'teacher' AND status = 1`;
   try {
     const [results] = await db.query(query);
+    console.log('✅ Teachers found:', results.length);
     res.json(results);
   } catch (err) {
-    console.error(err);
+    console.error('❌ Teachers error:', err);
     res.status(500).json({ error: err.message || 'DB error' });
   }
 });
