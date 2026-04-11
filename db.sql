@@ -180,6 +180,10 @@ INSERT INTO teacher_availability (teacher_id, available_date, day_of_week, start
 (7, '2026-01-19', 1, '10:30:00', '13:30:00'), -- Emma Hall
 (2, '2026-01-19', 1, '10:30:00', '13:30:00'), -- Ali Ahmed
 (10, '2026-01-19', 1, '10:30:00', '13:30:00'); -- Maria Garcia
+ALTER TABLE `rsa_scheduler`.`user` 
+ADD UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE;
+;
+
 
 -- 5. CALENDAR TABLE (Updated to include recurring_day for UI support)
 DROP TABLE IF EXISTS calendar;
