@@ -1,7 +1,7 @@
-GET http://3.143.57.120:3000/api/students/3/classes
+GET http://3.143.57.120:5000/api/students/3/classes
 
 ###
-GET http://3.143.57.120:3000/api/calendar
+GET http://3.143.57.120:5000/api/calendar
 
 ###
-GET http://3.143.57.120:3000/api/teachers/schedules
+GET http://3.143.57.120:5000/api/teachers/schedules

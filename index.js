@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const db = require('./db'); // promise-based pool
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 5000;
 const VM_HOST = process.env.VM_HOST || '3.143.57.120';
 const API_BASE_URL = process.env.API_BASE_URL || `http://${VM_HOST}:${PORT}`;
 const UI_BASE_URL = process.env.UI_BASE_URL || 'http://3.143.57.120:4000';
@@ -14,7 +14,15 @@ const fetch = require("node-fetch");
 const { generateToken } = require('./utils/jwt');
 const { authMiddleware, roleMiddleware } = require('./middleware/auth');
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    // Allow server-to-server, curl/Postman, and the deployed UI origin.
+    if (!origin || origin === UI_BASE_URL) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 
 // Apply JWT authentication middleware, but skip public routes
