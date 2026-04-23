@@ -1,8 +1,13 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 const db = require('./db'); // promise-based pool
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const VM_HOST = process.env.VM_HOST || '3.143.57.120';
+const API_BASE_URL = process.env.API_BASE_URL || `http://${VM_HOST}:${PORT}`;
+const UI_BASE_URL = process.env.UI_BASE_URL || 'http://3.143.57.120:4000';
+const LANGFLOW_BASE_URL = process.env.LANGFLOW_BASE_URL || 'http://3.143.57.120:7860';
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
 const fetch = require("node-fetch");
@@ -228,7 +233,7 @@ app.post("/api/user", async (req, res) => {
       [userId, token, expiresAt]
     );
     console.log("api key is ", process.env.COMPOSIO_API_KEY)
-    const activationLink = `http://localhost:3001/activation-form?token=${token}`;
+    const activationLink = `${UI_BASE_URL}/activation-form?token=${token}`;
     fetch("https://backend.composio.dev/api/v3/tools/execute/GMAIL_SEND_EMAIL", {
       method: "POST",
       headers: {
@@ -941,5 +946,7 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at ${API_BASE_URL}`);
+  console.log(`UI URL: ${UI_BASE_URL}`);
+  console.log(`Langflow URL: ${LANGFLOW_BASE_URL}`);
 });

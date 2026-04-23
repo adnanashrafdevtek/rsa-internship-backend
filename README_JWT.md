@@ -87,7 +87,7 @@ localStorage.setItem('jwtToken', response.token);
 
 ### 3. Use Token for All API Calls
 ```javascript
-fetch('http://localhost:3000/api/users', {
+fetch('http://3.143.57.120:3000/api/users', {
   headers: {
     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
   }
@@ -131,12 +131,12 @@ if (response.status === 401) {
 ```bash
 cd c:\Users\Yusuf\OneDrive\Documents\GitHub\rsa-internship-backend
 npm start
-# Server runs on http://localhost:3000
+# Server runs on http://3.143.57.120:3000
 ```
 
 ### 2. Protected Endpoints Return 401 Without Token
 ```bash
-curl http://localhost:3000/api/users
+curl http://3.143.57.120:3000/api/users
 # Returns: {"success":false,"error":"Missing Authorization header",...}
 ```
 
@@ -144,7 +144,7 @@ curl http://localhost:3000/api/users
 
 ### 3. Login to Get Token
 ```bash
-curl -X POST http://localhost:3000/login \
+curl -X POST http://3.143.57.120:3000/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password"}'
 # Returns: {...,"token":"eyJhbGc..."}
@@ -152,7 +152,7 @@ curl -X POST http://localhost:3000/login \
 
 ### 4. Use Token to Access Protected Endpoints
 ```bash
-curl http://localhost:3000/api/users \
+curl http://3.143.57.120:3000/api/users \
   -H "Authorization: Bearer <YOUR_TOKEN>"
 # Now works! ✅
 ```
