@@ -3,10 +3,10 @@ const cors = require('cors');
 require('dotenv').config();
 const db = require('./db'); // promise-based pool
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 5001;
 const VM_HOST = process.env.VM_HOST || '3.143.57.120';
 const API_BASE_URL = process.env.API_BASE_URL || `http://${VM_HOST}:${PORT}`;
-const UI_BASE_URL = process.env.UI_BASE_URL || 'http://3.143.57.120:4000';
+const UI_BASE_URL = process.env.UI_BASE_URL || process.env.FRONTEND_BASE_URL || 'http://localhost:4000';
 const LANGFLOW_BASE_URL = process.env.LANGFLOW_BASE_URL || 'http://3.143.57.120:7860';
 const { Composio } = require("@composio/client");
 const crypto = require("crypto");
@@ -14,16 +14,55 @@ const fetch = require("node-fetch");
 const { generateToken } = require('./utils/jwt');
 const { authMiddleware, roleMiddleware } = require('./middleware/auth');
 
-app.use(cors({
+const envAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  UI_BASE_URL,
+  'http://localhost:4000',
+  'http://127.0.0.1:4000',
+  ...envAllowedOrigins,
+];
+
+const corsOptions = {
   origin(origin, callback) {
-    // Allow server-to-server, curl/Postman, and the deployed UI origin.
-    if (!origin || origin === UI_BASE_URL) {
+    // Allow server-to-server/curl requests and configured browser origins.
+    if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
   },
-}));
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json());
+
+// Backward compatibility for older frontend routes missing the /api prefix.
+const apiAliasPrefixes = [
+  '/teachers',
+  '/teacher-availabilities',
+  '/teacher-availability',
+  '/schedules',
+  '/calendar',
+  '/classes',
+  '/students',
+  '/users',
+];
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) {
+    const shouldRewrite = apiAliasPrefixes.some(
+      (prefix) => req.path === prefix || req.path.startsWith(`${prefix}/`)
+    );
+    if (shouldRewrite) {
+      req.url = `/api${req.url}`;
+    }
+  }
+  next();
+});
 
 // Apply JWT authentication middleware, but skip public routes
 const publicRoutes = ['/login', '/api/activate', '/api/user'];
