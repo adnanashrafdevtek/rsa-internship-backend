@@ -5,6 +5,10 @@ const { verifyToken } = require('../utils/jwt');
  * Expected format: Authorization: Bearer <token>
  */
 function authMiddleware(req, res, next) {
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   // Skip auth for public routes
   const publicRoutes = ['/login', '/api/activate'];
   if (publicRoutes.includes(req.path)) {

@@ -19,22 +19,35 @@ const envAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const normalizeOrigin = (origin) =>
+  typeof origin === 'string' ? origin.replace(/\/$/, '') : origin;
+
+const localOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
 const allowedOrigins = [
   UI_BASE_URL,
   'http://localhost:4000',
   'http://127.0.0.1:4000',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
   ...envAllowedOrigins,
-];
+].map(normalizeOrigin);
 
 const corsOptions = {
   origin(origin, callback) {
     // Allow server-to-server/curl requests and configured browser origins.
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+    const isAllowedLocalOrigin = !!normalizedOrigin && localOriginRegex.test(normalizedOrigin);
+    if (!normalizedOrigin || isAllowedLocalOrigin || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'],
 };
 
 app.use(cors(corsOptions));
@@ -67,6 +80,10 @@ app.use((req, res, next) => {
 // Apply JWT authentication middleware, but skip public routes
 const publicRoutes = ['/login', '/api/activate', '/api/user'];
 app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   if (publicRoutes.includes(req.path)) {
     return next(); // Skip auth for public routes
   }
