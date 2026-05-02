@@ -262,9 +262,16 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/api/user", async (req, res) => {
-  const { firstName, lastName, emailAddress, address, role } = req.body;
+  // --- THE FIX: flexibly catch snake_case OR camelCase ---
+  const { address, role } = req.body;
+  const firstName = req.body.first_name || req.body.firstName;
+  const lastName = req.body.last_name || req.body.lastName;
+  const emailAddress = req.body.email || req.body.emailAddress;
+  // -------------------------------------------------------
+
   const dummyPassword = "temporary"; // hash later for security
   const isDummyAdmin = typeof emailAddress === 'string' && emailAddress.toLowerCase() === 'admin@example.com' && typeof role === 'string' && role.toLowerCase() === 'admin';
+  
   try {
     const [result] = await db.query(
       "INSERT INTO user (first_name, last_name, email, address, role, password, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
