@@ -19,6 +19,8 @@ const envAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const hasExplicitCorsAllowlist = envAllowedOrigins.length > 0;
+
 const normalizeOrigin = (origin) =>
   typeof origin === 'string' ? origin.replace(/\/$/, '') : origin;
 
@@ -40,14 +42,20 @@ const corsOptions = {
     // Allow server-to-server/curl requests and configured browser origins.
     const normalizedOrigin = normalizeOrigin(origin);
     const isAllowedLocalOrigin = !!normalizedOrigin && localOriginRegex.test(normalizedOrigin);
-    if (!normalizedOrigin || isAllowedLocalOrigin || allowedOrigins.includes(normalizedOrigin)) {
+    if (
+      !normalizedOrigin ||
+      isAllowedLocalOrigin ||
+      allowedOrigins.includes(normalizedOrigin) ||
+      !hasExplicitCorsAllowlist
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'Origin', 'X-Requested-With', 'x-api-key'],
+  exposedHeaders: ['Authorization'],
 };
 
 app.use(cors(corsOptions));
