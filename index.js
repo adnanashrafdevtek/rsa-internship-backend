@@ -788,26 +788,46 @@ app.delete('/api/classes/:classId/students/:studentId', async (req, res) => {
 });
 
 // Get all teacher availabilities (for scheduling)
-app.get("/api/teacher-availabilities", async (req, res) => {
+// POST save/update teacher availability
+app.post("/api/teacher-availability", roleMiddleware(['admin']), async (req, res) => {
+  const { teacher_id, events } = req.body;
+  if (!teacher_id || !events || !events.length) {
+    return res.status(400).json({ error: "Missing teacher_id or events" });
+  }
+
   try {
-    const [results] = await db.query(
-      `SELECT 
-        ta.id,
-        ta.teacher_id,
-        u.first_name AS teacher_first_name,
-        u.last_name AS teacher_last_name,
-        ta.day_of_week,
-        ta.start_time,
-        ta.end_time,
-        ta.valid_from,
-        ta.valid_to,
-        ta.created_at
-      FROM teacher_availability ta
-      LEFT JOIN user u ON ta.teacher_id = u.id`
-    );
-    res.json(results);
+    // Clear old slots for this teacher
+    await db.query("DELETE FROM teacher_availability WHERE teacher_id = ?", [teacher_id]);
+
+    for (const e of events) {
+      // Create dates as a fallback, but prioritize the explicit local strings sent by React
+      const startDate = new Date(e.start);
+      const endDate = new Date(e.end);
+
+      const dayOfWeek = e.day_of_week !== undefined ? e.day_of_week : startDate.getDay(); 
+      const startTime = e.start_time || startDate.toTimeString().split(" ")[0]; 
+      const endTime = e.end_time || endDate.toTimeString().split(" ")[0];
+      const validFrom = e.valid_from || startDate.toISOString().slice(0, 10);
+      const validTo = e.valid_to || endDate.toISOString().slice(0, 10);
+
+      await db.query(
+        `INSERT INTO teacher_availability 
+         (teacher_id, day_of_week, start_time, end_time, valid_from, valid_to) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          teacher_id,
+          dayOfWeek,
+          startTime,
+          endTime,
+          validFrom,
+          validTo,
+        ]
+      );
+    }
+
+    res.json({ success: true, message: "Availability saved!" });
   } catch (err) {
-    console.error("Error fetching teacher availabilities:", err);
+    console.error("❌ DB error:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
