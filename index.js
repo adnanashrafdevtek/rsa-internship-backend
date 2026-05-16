@@ -63,9 +63,10 @@ app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 
 // Backward compatibility for older frontend routes missing the /api prefix.
+// Backward compatibility for older frontend routes missing the /api prefix.
 const apiAliasPrefixes = [
   '/teachers',
-  '/teacher-availabilities',
+  '/teacher-availabilities', // Added plural safely
   '/teacher-availability',
   '/schedules',
   '/calendar',
@@ -73,14 +74,18 @@ const apiAliasPrefixes = [
   '/students',
   '/users',
 ];
+
 app.use((req, res, next) => {
-  if (!req.path.startsWith('/api/')) {
-    const shouldRewrite = apiAliasPrefixes.some(
-      (prefix) => req.path === prefix || req.path.startsWith(`${prefix}/`)
-    );
-    if (shouldRewrite) {
-      req.url = `/api${req.url}`;
-    }
+  // IF the request already explicitly starts with /api/, do NOT touch it or rewrite it!
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+
+  const shouldRewrite = apiAliasPrefixes.some(
+    (prefix) => req.path === prefix || req.path.startsWith(`${prefix}/`)
+  );
+  if (shouldRewrite) {
+    req.url = `/api${req.url}`;
   }
   next();
 });
@@ -831,6 +836,31 @@ app.post("/api/teacher-availability", roleMiddleware(['admin']), async (req, res
     res.status(500).json({ error: "Database error" });
   }
 });
+// GET /api/teacher-availabilities — Fetch ALL teacher availabilities
+app.get("/api/teacher-availabilities", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        ta.id,
+        ta.teacher_id,
+        u.first_name AS teacher_first_name,
+        u.last_name AS teacher_last_name,
+        ta.day_of_week,
+        ta.start_time,
+        ta.end_time,
+        ta.valid_from,
+        ta.valid_to,
+        ta.created_at
+      FROM teacher_availability ta
+      LEFT JOIN user u ON ta.teacher_id = u.id
+    `;
+    const [results] = await db.query(query);
+    res.json(results);
+  } catch (err) {
+    console.error("Error fetching all teacher availabilities:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+}); 
 
 // Get all availabilities for a specific teacher (for scheduling)
 app.get("/api/teacher-availabilities/:teacherId", async (req, res) => {
